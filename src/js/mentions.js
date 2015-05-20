@@ -4,7 +4,10 @@ var extend = require("./utilities/extend");
 var Mentions = function(quill, options) {
     var defaults = {
         ajax: false,
+        choices: ["Simone dB.", "Mister P", "Jelly O.", "Chewie G."],
+        choiceTemplate: "<li>{{choice}}</li>",
         hideMargin: '-10000px',
+        isMentioning: false,
         offset: 10,
         template: template,
     };
@@ -12,14 +15,12 @@ var Mentions = function(quill, options) {
     this.options = extend({}, defaults, options);
 
     this.container = this.quill.addContainer("ql-mentions");
-    this.container.innerHTML = this.options.template;
     this.hide();
     this.addListeners();
 
-};
+    // todo - allow classes
+    this.quill.addFormat('mention', { tag: 'A', "class": 'ql-mention-item' });
 
-Mentions.prototype.isMentioning = function isMentioning() {
-    throw new Error();
 };
 
 Mentions.prototype.position = function position(reference) {
@@ -77,24 +78,99 @@ Mentions.prototype.show = function show(reference) {
 };
 
 Mentions.prototype.getChoices = function getChoices() {
-    throw new Error();
+    var choices = this.options.choices.map(function(choice) {
+        return this.options.choiceTemplate.replace("{{choice}}", choice);
+    }, this).join("");
+    this.container.innerHTML = this.options.template.replace("{{choices}}", choices);
 };
 
 Mentions.prototype.addListeners = function addListeners() {
+    var selectionChangeHandler = this.selectionChangeHandler.bind(this);
+    var textChangeHandler = this.textChangeHandler.bind(this);
     var addMentionHandler = this.addMentionHandler.bind(this);
+
+    this.quill.on(this.quill.constructor.events.SELECTION_CHANGE, selectionChangeHandler);
+    this.quill.on(this.quill.constructor.events.TEXT_CHANGE, textChangeHandler);
+
     this.container.addEventListener('click', addMentionHandler, false);
     this.container.addEventListener('touchend', addMentionHandler, false);
 };
 
+Mentions.prototype.textChangeHandler = function textChangeHandler(delta) {
+
+    var mention = this._findMentionSymbol(delta);
+    if (mention) {
+        // this.setMode(anchor.href, false);
+        this.getChoices();
+        this.show();
+    }
+    else if (this.container.style.left !== this.options.hideMargin) {
+        this.range = null;   // Prevent restoring selection to last saved
+        this.hide();
+    }
+    // this.quill.on(this.quill.constructor.events.SELECTION_CHANGE, function(range)
+
+    // )
+};
+
+Mentions.prototype.selectionChangeHandler = function selectionChangeHandler(range) {
+    if (!range || !range.isCollapsed()) return;
+
+    var mention = this._findMentionNode(range);
+    if (this.isMentioning) { // BAD - relies on sideffecting...
+
+        console.log("[MENTIONS] we are mentioning and the mentionNode found here is node:", mention);
+
+        this.getChoices();
+        this.show();
+    }
+    else {
+        this.range = null;
+    }
+    //   return unless range? and range.isCollapsed()
+    //   anchor = this._findAnchor(range)
+    //   if anchor
+    //     this.setMode(anchor.href, false)
+    //     this.show(anchor)
+    //   else if @container.style.left != Tooltip.HIDE_MARGIN
+    //     @range = null   # Prevent restoring selection to last saved
+    //     this.hide()
+};
+
 Mentions.prototype.addMentionHandler = function addMentionHandler(e) {
     var target = e.target || e.srcElement;
-    this.quill.insertText(this.range.end, target.innerText);
+    this.quill.insertText(this.range.end, target.innerText, { "mention": true });
     this.hide();
     e.stopPropagation();
 };
 
+
+Mentions.prototype._findMentionSymbol = function _findMentionSymbol(delta) {
+
+    // var contents = this.quill.getContents(0, delta.length());
+    // console.log("_findMentionSymbol contents", contents);
+
+    var text = this.quill.getText(0, delta.length());
+    var index = text.lastIndexOf("@"),
+        result;
+
+    if (index === -1) return false;
+
+    result = this.quill.getContents(index, delta.length());
+    console.log("_findMentionSymbol result", result);
+    return result;
+};
+
 // This is how the link-toolitp finds an anchor tag...
-Mentions.prototype._findAnchor = function _findAnchor(range) {
+Mentions.prototype._findMentionNode = function _findNode(range) {
+
+    var text = this.quill.getText(0, range.end),
+        index = text.lastIndexOf("@"),
+        result;
+
+    this.isMentioning = (index !== -1);
+
+
     var leafAndOffset = this.quill.editor.doc.findLeafAt(range.start, true),
         leaf = leafAndOffset[0],
         offset = leafAndOffset[1];
@@ -103,7 +179,7 @@ Mentions.prototype._findAnchor = function _findAnchor(range) {
     if (leaf) node = leaf.node;
 
     while (node && node !== this.quill.root) {
-        if (node.tagName == 'A') {
+        if (node.tagName == 'DIV') {
             return node;
         }
         node = node.parentNode;
