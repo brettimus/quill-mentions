@@ -1,0 +1,26 @@
+.ql-mentions {
+  border: solid thin #888;
+  padding: 0;
+  position: absolute;
+
+  ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+
+    li {
+      border-bottom: solid thin #ddd;
+      cursor: pointer;
+      padding: 8px 12px 8px 12px;
+
+      &:last-child {
+        border-bottom: none;
+      }
+
+      &:hover {
+        background: #888;
+        color: white;
+      }
+    }
+  }
+}

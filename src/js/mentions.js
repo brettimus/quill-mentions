@@ -1,15 +1,3 @@
-(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-(function (global){
-global.QuillMentions = require("./mentions");
-// if (window.Quill) {
-//     Quill.registerModule('mentions', Mentions);
-// }
-// else {
-//     throw new Error("Quill is not defined in the global scope.");
-// }
-
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./mentions":2}],2:[function(require,module,exports){
 var template = require("./template");
 var extend = require("./utilities/extend");
 
@@ -103,6 +91,7 @@ Mentions.prototype.addMentionHandler = function addMentionHandler(e) {
     console.log(this.quill.getSelection());
     console.log("this range", this.range);
     console.log(target);
+    this.hide();
     e.stopPropagation();
 };
 
@@ -126,29 +115,3 @@ Mentions.prototype._findAnchor = function _findAnchor(range) {
 
 
 module.exports = Mentions;
-},{"./template":3,"./utilities/extend":4}],3:[function(require,module,exports){
-module.exports = '<ul><li>Person DaPerson</li><li>Boots McShoes</li><li>Penelope Muse</li><li>Kirkland Costner</li></ul>';
-},{}],4:[function(require,module,exports){
-module.exports = function extend() {
-    // extends an arbitrary number of objects
-    var args   = [].slice.call(arguments, 0),
-        result = args[0];
-
-    for (var i=1; i < args.length; i++) {
-        result = extendHelper(result, args[i]);
-    }
-
-    return result;
-};
-
-function extendHelper(destination, source) {
-    // thanks be to angus kroll
-    // https://javascriptweblog.wordpress.com/2011/05/31/a-fresh-look-at-javascript-mixins/
-    for (var k in source) {
-        if (source.hasOwnProperty(k)) {
-          destination[k] = source[k];
-        }
-    }
-    return destination;
-}
-},{}]},{},[1,2,3,4]);

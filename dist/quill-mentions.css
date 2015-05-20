@@ -1,0 +1,24 @@
+.ql-mentions {
+  border: solid thin #888;
+  padding: 0;
+  position: absolute;
+}
+.ql-mentions ul {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+}
+.ql-mentions ul li {
+  border-bottom: solid thin #ddd;
+  cursor: pointer;
+  padding: 8px 12px 8px 12px;
+}
+.ql-mentions ul li:last-child {
+  border-bottom: none;
+}
+.ql-mentions ul li:hover {
+  background: #888;
+  color: white;
+}
+
+/*# sourceMappingURL=quill-mentions.css.map */

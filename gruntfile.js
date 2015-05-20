@@ -25,7 +25,17 @@ module.exports = function(grunt) {
                 }
             }
         },
+        sass: {
+          dist: {
+            options: {
+              style: 'expanded'
+            },
+            files: {
+              'dist/quill-mentions.css': 'src/scss/style.scss',
+            }
+          }
+        },
     });
 
-    grunt.registerTask('default', ['browserify', 'uglify',]);
+    grunt.registerTask('default', ['browserify', 'uglify', 'sass']);
 };
