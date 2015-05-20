@@ -100,9 +100,10 @@ Mentions.prototype.addListeners = function addListeners() {
 
 Mentions.prototype.addMentionHandler = function addMentionHandler(e) {
     var target = e.target || e.srcElement;
-    console.log(this.quill.getSelection());
+    this.quill.insertText(this.range.end, target.innerText);
     console.log("this range", this.range);
     console.log(target);
+    this.hide();
     e.stopPropagation();
 };
 
