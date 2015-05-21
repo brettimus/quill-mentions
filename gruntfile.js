@@ -6,9 +6,19 @@ module.exports = function(grunt) {
         pkg: grunt.file.readJSON('package.json'),
         watch: {
             js: {
-                files: ['src/js/**/*.js', 'dist/quill-mentions.js'],
-                tasks: ['browserify', 'uglify']
-            }
+                files: ['src/js/**/*.js'],
+                tasks: ['buildjs'],
+                options: {
+                    interrupt: true,
+                },
+            },
+            css: {
+                files: ['src/scss/**/*.scss'],
+                tasks: ['sass'],
+                options: {
+                    interrupt: true,
+                },
+            },
         },
         browserify: {
             dist: {
@@ -16,7 +26,6 @@ module.exports = function(grunt) {
                 'dist/quill-mentions.js': ['src/js/**/*.js'],
               },
             },
-            plugin: ["brfs"],
         },
         uglify: {
             build: {
@@ -46,4 +55,5 @@ module.exports = function(grunt) {
     });
 
     grunt.registerTask('default', ['browserify', 'uglify', 'sass', 'jsdoc']);
+    grunt.registerTask('buildjs', ['browserify', 'uglify']); // don't build sass or docs bc they're sloowwwww
 };

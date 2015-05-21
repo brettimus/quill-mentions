@@ -201,7 +201,6 @@ module.exports = Mentions;
  */
 var loadJSON = require("./utilities/ajax").loadJSON;
 
-
 /**
  * @callback searchCallback
  * @param {Object[]} data - An array of objects that represent possible matches to data. The data are mapped over a formatter to provide a consistent interface.
