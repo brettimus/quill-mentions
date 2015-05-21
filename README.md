@@ -3,6 +3,9 @@ _very much under construction_
 
 mentions module for quilljs
 
+# docs
+
+if you build docs, be warned. shit fails if the _full path_ to your repo includes any folders with an underscore. see the issue and possible fix on github.
 
 # to use
 `quill-mentions` exposes a single global variable, `QuillMentions`. 
