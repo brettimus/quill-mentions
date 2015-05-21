@@ -198,7 +198,7 @@ module.exports = function addSearch(Mentions) {
     Mentions.prototype.ajaxSearch = function ajaxSearch(qry, callback) {
         var path = this.options.ajax.path;
         var toName = this.options.ajax.toName; // TODO - provide identity function as default (but do the default handling in teh constructor plz)
-        var qryString = encodeURIComponent(path + "?" + this.options.queryParameter + "=" + qry);
+        var qryString = path + "?" + this.options.queryParameter + "=" + qry; // TODO - encodeURIComponent
         loadJSON(qryString, function(data) {
             console.log("Ajax success! Here's the data: ", data);
             if (callback) {
