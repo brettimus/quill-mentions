@@ -1,4 +1,12 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+module.exports = function addFormat(Mentions) {
+
+    Mentions.prototype.addFormat = function(className) {
+        this.quill.addFormat('mention', { tag: 'SPAN', "class": "ql-", });
+    };
+
+};
+},{}],2:[function(require,module,exports){
 (function (global){
 global.QuillMentions = require("./mentions");
 // if (window.Quill) {
@@ -9,13 +17,16 @@ global.QuillMentions = require("./mentions");
 // }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./mentions":2}],2:[function(require,module,exports){
+},{"./mentions":3}],3:[function(require,module,exports){
 var template = require("./template");
 var extend = require("./utilities/extend");
 var loadJSON = require("./utilities/ajax").loadJSON;
+
+var addFormat = require("./format");
 var addSearch = require("./search");
 var addView = require("./view");
 
+addFormat(Mentions);
 addSearch(Mentions);
 addView(Mentions);
 
@@ -28,66 +39,74 @@ function Mentions(quill, options) {
         choiceTemplate: "<li>{{choice}}</li>",
         hideMargin: '-10000px',
         isMentioning: false,
-        matcher: /@([a-z]+\s?[a-z]+)/,
+        matcher: /@([a-z]+\ ?[a-z]*$)/i,
+        mentionClass: "mention-item",
         offset: 10,
         template: template,
     };
-    this.quill = quill;
+
     this.options = extend({}, defaults, options);
+    this.quill = quill;
+    this.addFormat(); // adds custom format for mentions
 
     this.currentChoices = null;
+    this.currentMention = null;
 
     this.container = this.quill.addContainer("ql-mentions");
     this.hide();
     this.addListeners();
 
     // todo - allow custom classes
-    this.quill.addFormat('mention', { tag: 'A', "class": 'ql-mention-item' });
 
 }
 
 Mentions.prototype.addListeners = function addListeners() {
     var textChangeHandler = this.textChangeHandler.bind(this);
+    var selectionChangeHandler = this.selectionChangeHandler.bind(this);
     var addMentionHandler = this.addMentionHandler.bind(this);
 
     this.quill.on(this.quill.constructor.events.TEXT_CHANGE, textChangeHandler);
+    // this.quill.on(this.quill.constructor.events.SELECTION_CHANGE, selectionChangeHandler);
+
 
     this.container.addEventListener('click', addMentionHandler, false);
     this.container.addEventListener('touchend', addMentionHandler, false);
 };
 
-Mentions.prototype.textChangeHandler = function textChangeHandler(delta) {
-    var mention = this.findMention();
+Mentions.prototype.textChangeHandler = function textChangeHandler(_delta) {
+    var mention = this.findMention(),
+        queryString;
     if (mention) {
-        this.getChoices(mention[0]);
-        // this.show();  // called in the rabbit hole
+        this.currentMention = mention;
+        queryString = mention[0].replace("@", "");
+        this.search.call(this, queryString, function(data) {
+            console.log("Callback data: ", data);
+            this.currentChoices = data.slice(0, this.options.choiceMax);
+            console.log("Callback currentChoices: ", this.currentChoices);
+            this.renderCurrentChoices();
+            this.show();
+        });
     }
     else if (this.container.style.left !== this.options.hideMargin) {
+        this.currentMention = null;
         this.range = null;   // Prevent restoring selection to last saved
         this.hide();
     }
 };
 
-Mentions.prototype.findMention = function findMention() {
-    var range = this.quill.getSelection(),
-        contents,
-        match;
-
-    if (!range) return;
-    contents = this.quill.getText(0, range.end);
-    match = this.options.matcher.exec(contents);
-    return match;
+Mentions.prototype.selectionChangeHandler = function selectionChangeHandler(range) {
+    throw new Error("No idea what to do with a selection-change event");
 };
 
-Mentions.prototype.getChoices = function getChoices(queryText) {
-    console.log("About to call callback with queryText: ", queryText);
-    this.search.call(this, queryText, function(data) {
-        console.log("Callback data: ", data);
-        this.currentChoices = data.slice(0, this.options.choiceMax);
-        console.log("Callback currentChoices: ", this.currentChoices);
-        this.renderCurrentChoices();
-        this.show();
-    });
+Mentions.prototype.findMention = function findMention() {
+    var contents,
+        match;
+
+    this.range = this.quill.getSelection();
+    if (!this.range) return;
+    contents = this.quill.getText(0, this.range.end);
+    match = this.options.matcher.exec(contents);
+    return match;
 };
 
 Mentions.prototype.renderCurrentChoices = function renderCurrentChoices() {
@@ -105,8 +124,14 @@ Mentions.prototype.renderCurrentChoices = function renderCurrentChoices() {
 };
 
 Mentions.prototype.addMentionHandler = function addMentionHandler(e) {
-    var target = e.target || e.srcElement;
-    this.quill.insertText(this.range.end, target.innerText, { "mention": true });
+    console.log("Current selection when a choice is clicked: ", this.range);
+    var target = e.target || e.srcElement,
+        insertAt = this.currentMention.index,
+        toInsert = "@"+target.innerText;
+    this.quill.deleteText(insertAt, insertAt + this.currentMention[0].length);
+    this.quill.insertText(insertAt, toInsert, "mention", this.options.mentionClass);
+    this.quill.insertText(insertAt + toInsert.length, " ");
+    this.quill.setSelection(insertAt + toInsert.length + 1, insertAt + toInsert.length + 1);
     this.hide();
     e.stopPropagation();
 };
@@ -141,7 +166,7 @@ Mentions.prototype._findMentionNode = function _findNode(range) {
 };
 
 module.exports = Mentions;
-},{"./search":3,"./template":4,"./utilities/ajax":5,"./utilities/extend":6,"./view":7}],3:[function(require,module,exports){
+},{"./format":1,"./search":4,"./template":5,"./utilities/ajax":6,"./utilities/extend":7,"./view":8}],4:[function(require,module,exports){
 module.exports = function addSearch(Mentions) {
     Mentions.prototype.search = function search(qry, callback) {
         if (this.options.ajax) {
@@ -155,7 +180,8 @@ module.exports = function addSearch(Mentions) {
     Mentions.prototype.staticSearch = function staticSearch(qry, callback) {
         qry = qry.replace("@", "");
         var data = this.options.choices.filter(function(choice) {
-            return choice.name.toLowerCase().indexOf(qry) !== -1;
+            // TODO - use case insensitive regexp
+            return choice.name.toLowerCase().indexOf(qry.toLowerCase()) !== -1;
         });
         if (!callback) console.log("Warning! staticSearch was not provided a callback. It's probably definitely going to error after this message, you ding-dong.");
         callback.call(this, data);
@@ -176,9 +202,9 @@ module.exports = function addSearch(Mentions) {
         });
     };
 };
-},{}],4:[function(require,module,exports){
-module.exports = '<ul>{{choices}}</ul>';
 },{}],5:[function(require,module,exports){
+module.exports = '<ul>{{choices}}</ul>';
+},{}],6:[function(require,module,exports){
 module.exports = {
 
     // from stackoverflow 
@@ -201,7 +227,7 @@ module.exports = {
         xhr.send();
     },
 };
-},{}],6:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 module.exports = function extend() {
     // extends an arbitrary number of objects
     var args   = [].slice.call(arguments, 0),
@@ -224,7 +250,7 @@ function extendHelper(destination, source) {
     }
     return destination;
 }
-},{}],7:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 module.exports = function addView(Mentions) {
 
     Mentions.prototype.position = function position(reference) {
@@ -280,4 +306,4 @@ module.exports = function addView(Mentions) {
         this.container.focus();
     };
 };
-},{}]},{},[1,2,3,4,5,6,7]);
+},{}]},{},[1,2,3,4,5,6,7,8]);

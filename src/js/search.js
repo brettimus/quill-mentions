@@ -11,7 +11,8 @@ module.exports = function addSearch(Mentions) {
     Mentions.prototype.staticSearch = function staticSearch(qry, callback) {
         qry = qry.replace("@", "");
         var data = this.options.choices.filter(function(choice) {
-            return choice.name.toLowerCase().indexOf(qry) !== -1;
+            // TODO - use case insensitive regexp
+            return choice.name.toLowerCase().indexOf(qry.toLowerCase()) !== -1;
         });
         if (!callback) console.log("Warning! staticSearch was not provided a callback. It's probably definitely going to error after this message, you ding-dong.");
         callback.call(this, data);

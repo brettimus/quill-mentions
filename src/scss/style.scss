@@ -1,3 +1,6 @@
+
+$faux-link: #2ba6cb;
+
 .ql-mentions {
   border: solid thin #888;
   padding: 0;
@@ -23,4 +26,8 @@
       }
     }
   }
+}
+.ql-mention-item {
+  color: $faux-link;
+  text-decoration: underline;
 }
