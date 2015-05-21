@@ -47,7 +47,7 @@ var ajaxDefaults = {
 function defaultFactory(options) {
     var result = extend({}, defaults, options);
     if (options.ajax) {
-        result.options.ajax = extend({}, ajaxDefaults, options.ajax);
+        result.ajax = extend({}, ajaxDefaults, options.ajax);
     }
     return result;
 }

@@ -20,13 +20,7 @@ var loadJSON = require("./utilities/ajax").loadJSON;
  */
 function search(qry, callback) {
     var searcher = this.options.ajax ? this.ajaxSearch : this.staticSearch;
-    searcher(qry, callback);
-    // if (this.options.ajax) {
-    //     this.ajaxSearch(qry, callback);
-    // }
-    // else {
-    //     this.staticSearch(qry, callback);
-    // }
+    searcher.call(this, qry, callback);
 }
 
 

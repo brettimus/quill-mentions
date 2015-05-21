@@ -48,7 +48,7 @@ var ajaxDefaults = {
 function defaultFactory(options) {
     var result = extend({}, defaults, options);
     if (options.ajax) {
-        result.options.ajax = extend({}, ajaxDefaults, options.ajax);
+        result.ajax = extend({}, ajaxDefaults, options.ajax);
     }
     return result;
 }
@@ -195,6 +195,10 @@ Mentions.prototype.addMentionHandler = function addMentionHandler(e) {
 
 module.exports = Mentions;
 },{"./defaults/defaults":1,"./format":2,"./search":5,"./view":9}],5:[function(require,module,exports){
+/**
+ * Search module
+ * @module search
+ */
 var loadJSON = require("./utilities/ajax").loadJSON;
 
 
@@ -206,19 +210,14 @@ var loadJSON = require("./utilities/ajax").loadJSON;
 /**
  * Dispatches search for possible matches to a query, Mention#search.
  *
+ * Mention#search
  * @memberof Mention.prototype
- * @instance
+ * @this Mention
  * @param {searchCallback} callback - Callback that handles the possible matches
  */
 function search(qry, callback) {
     var searcher = this.options.ajax ? this.ajaxSearch : this.staticSearch;
-    searcher(qry, callback);
-    // if (this.options.ajax) {
-    //     this.ajaxSearch(qry, callback);
-    // }
-    // else {
-    //     this.staticSearch(qry, callback);
-    // }
+    searcher.call(this, qry, callback);
 }
 
 
