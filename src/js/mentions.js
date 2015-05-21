@@ -17,7 +17,7 @@ addView(Mentions);
  * The Mentions constructor that is registered with Quill.
  * @constructor
  * @param {Object} quill - An instance of Quill.
- * @param {Object} options - The configuration passed to QuillMentions.
+ * @param {Object} [options] - The configuration passed to QuillMentions.
  */
 function Mentions(quill, options) {
     var ajaxDefaults = {
