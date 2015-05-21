@@ -1,3 +1,4 @@
+/** @global */
 global.QuillMentions = require("./mentions");
 // if (window.Quill) {
 //     Quill.registerModule('mentions', Mentions);

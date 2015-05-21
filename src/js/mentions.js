@@ -1,3 +1,7 @@
+/** 
+ * Mentions module.
+ * @module mentions
+ */
 var template = require("./template");
 var extend = require("./utilities/extend");
 var identity = require("./utilities/identity");
@@ -10,10 +14,10 @@ addSearch(Mentions);
 addView(Mentions);
 
 /**
- * The Mentions module that is registered with Quill.
+ * The Mentions constructor that is registered with Quill.
  * @constructor
- * @param {string} quill - An instance of Quill.
- * @param {string} options - The configuration passed to QuillMentions.
+ * @param {Object} quill - An instance of Quill.
+ * @param {Object} options - The configuration passed to QuillMentions.
  */
 function Mentions(quill, options) {
     var ajaxDefaults = {

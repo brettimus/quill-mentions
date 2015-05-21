@@ -1,14 +1,31 @@
 var loadJSON = require("./utilities/ajax").loadJSON;
 
+
+/**
+ * @callback searchCallback
+ * @param {Object[]} data - An array of objects that represent possible matches to data.
+ */
+
+/**
+ * Dispatches search for possible matches to a query, Mention#search.
+ *
+ * @memberof Mention.prototype
+ * @instance
+ * @param {searchCallback} callback - Callback that handles the possible matches
+ */
+function search(qry, callback) {
+    if (this.options.ajax) {
+        this.ajaxSearch(qry, callback);
+    }
+    else {
+        this.staticSearch(qry, callback);
+    }
+}
+
+
+
 module.exports = function addSearch(Mentions) {
-    Mentions.prototype.search = function search(qry, callback) {
-        if (this.options.ajax) {
-            this.ajaxSearch(qry, callback);
-        }
-        else {
-            this.staticSearch(qry, callback);
-        }
-    };
+    Mentions.prototype.search = search;
 
     Mentions.prototype.staticSearch = function staticSearch(qry, callback) {
         var data = this.options.choices.filter(staticFilter);
