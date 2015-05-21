@@ -26,7 +26,7 @@ function Mentions(quill, options) {
         choiceTemplate: "<li>{{choice}}</li>",
         hideMargin: '-10000px',
         isMentioning: false,
-        matcher: /@([a-z]+\ ?[a-z]*$)/i,  // TODO - is using a literal space in this REGEX okay?
+        matcher: /@(\w*\-?\w*\.?)\ ?(\w*\-?\w*\.?)\ ?(\w*\-?\w*\.?)$/i,  // TODO - is using a literal space in this REGEX okay?
         mentionClass: "mention-item",
         offset: 10,
         template: template,
