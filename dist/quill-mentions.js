@@ -39,7 +39,7 @@ function Mentions(quill, options) {
         choiceTemplate: "<li>{{choice}}</li>",
         hideMargin: '-10000px',
         isMentioning: false,
-        matcher: /@([a-z]+\ ?[a-z]*$)/i,
+        matcher: /@([a-z]+\ ?[a-z]*$)/i,  // TODO - is using a literal space in this REGEX okay?
         mentionClass: "mention-item",
         offset: 10,
         template: template,
@@ -127,11 +127,12 @@ Mentions.prototype.addMentionHandler = function addMentionHandler(e) {
     console.log("Current selection when a choice is clicked: ", this.range);
     var target = e.target || e.srcElement,
         insertAt = this.currentMention.index,
-        toInsert = "@"+target.innerText;
+        toInsert = "@"+target.innerText,
+        toFocus = insertAt + toInsert.length + 1;
     this.quill.deleteText(insertAt, insertAt + this.currentMention[0].length);
     this.quill.insertText(insertAt, toInsert, "mention", this.options.mentionClass);
     this.quill.insertText(insertAt + toInsert.length, " ");
-    this.quill.setSelection(insertAt + toInsert.length + 1, insertAt + toInsert.length + 1);
+    this.quill.setSelection(toFocus, toFocus);
     this.hide();
     e.stopPropagation();
 };
@@ -167,6 +168,8 @@ Mentions.prototype._findMentionNode = function _findNode(range) {
 
 module.exports = Mentions;
 },{"./format":1,"./search":4,"./template":5,"./utilities/ajax":6,"./utilities/extend":7,"./view":8}],4:[function(require,module,exports){
+var loadJSON = require("./utilities/ajax").loadJSON;
+
 module.exports = function addSearch(Mentions) {
     Mentions.prototype.search = function search(qry, callback) {
         if (this.options.ajax) {
@@ -202,7 +205,7 @@ module.exports = function addSearch(Mentions) {
         });
     };
 };
-},{}],5:[function(require,module,exports){
+},{"./utilities/ajax":6}],5:[function(require,module,exports){
 module.exports = '<ul>{{choices}}</ul>';
 },{}],6:[function(require,module,exports){
 module.exports = {

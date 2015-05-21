@@ -1,3 +1,5 @@
+var loadJSON = require("./utilities/ajax").loadJSON;
+
 module.exports = function addSearch(Mentions) {
     Mentions.prototype.search = function search(qry, callback) {
         if (this.options.ajax) {
