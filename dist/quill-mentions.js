@@ -30,7 +30,7 @@ addSearch(Mentions);
 addView(Mentions);
 
 // TODO - document this...
-// ajax = { path: "", toName: Function }
+// ajax = { path: "", format: identity, queryParameter: "q" }
 
 
 function Mentions(quill, options) {
@@ -147,35 +147,6 @@ Mentions.prototype.addMentionHandler = function addMentionHandler(e) {
     e.stopPropagation();
 };
 
-
-
-
-// This is how the link-toolitp finds an anchor tag...
-Mentions.prototype._findMentionNode = function _findNode(range) {
-
-    var text = this.quill.getText(0, range.end),
-        index = text.lastIndexOf("@"),
-        result;
-
-    this.isMentioning = (index !== -1);
-
-
-    var leafAndOffset = this.quill.editor.doc.findLeafAt(range.start, true),
-        leaf = leafAndOffset[0],
-        offset = leafAndOffset[1];
-    var node;
-
-    if (leaf) node = leaf.node;
-
-    while (node && node !== this.quill.root) {
-        if (node.tagName == 'DIV') {
-            return node;
-        }
-        node = node.parentNode;
-    }
-    return null;
-};
-
 module.exports = Mentions;
 },{"./format":1,"./search":4,"./template":5,"./utilities/extend":7,"./utilities/identity":8,"./view":9}],4:[function(require,module,exports){
 var loadJSON = require("./utilities/ajax").loadJSON;
@@ -218,7 +189,6 @@ function staticFilter(choice) {
 
 function ajaxSuccess(callback, formatter) {
     return function(data) {
-        console.log("Ajax success! Here's the data: ", data);
         if (callback) callback(data.map(formatter));
         else noCallbackError("ajaxSearch");
     };
@@ -328,16 +298,38 @@ module.exports = function addView(Mentions) {
     };
 
     Mentions.prototype.show = function show(reference) {
+        this.range = this.quill.getSelection();
+        reference = reference || this._findMentionNode(this.range);
+        console.log(reference);
         var position,
             left,
             top;
-        this.range = this.quill.getSelection();
+
         position = this.position(reference);
         left = position[0];
         top = position[1];
         this.container.style.left = left+"px";
         this.container.style.top  = top+"px";
         this.container.focus();
+    };
+
+    Mentions.prototype._findMentionNode = function _findMentionNode(range) {
+        var leafAndOffset,
+            leaf,
+            offset,
+            node;
+
+        leafAndOffset = this.quill.editor.doc.findLeafAt(range.start, true);
+        console.log("leafAndOffset", leafAndOffset);
+        leaf = leafAndOffset[0];
+        offset = leafAndOffset[1];
+        if (leaf) node = leaf.node;
+        while (node) {
+            console.log("Finding mention node. Looping up...", node);
+            if (node.tagName === "DIV") return node;
+            node = node.parentNode;
+        }
+        return null;
     };
 };
 },{}]},{},[1,2,3,4,5,6,7,8,9]);

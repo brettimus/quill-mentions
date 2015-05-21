@@ -38,7 +38,6 @@ function staticFilter(choice) {
 
 function ajaxSuccess(callback, formatter) {
     return function(data) {
-        console.log("Ajax success! Here's the data: ", data);
         if (callback) callback(data.map(formatter));
         else noCallbackError("ajaxSearch");
     };

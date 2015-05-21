@@ -41,15 +41,37 @@ module.exports = function addView(Mentions) {
     };
 
     Mentions.prototype.show = function show(reference) {
+        this.range = this.quill.getSelection();
+        reference = reference || this._findMentionNode(this.range);
+        console.log(reference);
         var position,
             left,
             top;
-        this.range = this.quill.getSelection();
+
         position = this.position(reference);
         left = position[0];
         top = position[1];
         this.container.style.left = left+"px";
         this.container.style.top  = top+"px";
         this.container.focus();
+    };
+
+    Mentions.prototype._findMentionNode = function _findMentionNode(range) {
+        var leafAndOffset,
+            leaf,
+            offset,
+            node;
+
+        leafAndOffset = this.quill.editor.doc.findLeafAt(range.start, true);
+        console.log("leafAndOffset", leafAndOffset);
+        leaf = leafAndOffset[0];
+        offset = leafAndOffset[1];
+        if (leaf) node = leaf.node;
+        while (node) {
+            console.log("Finding mention node. Looping up...", node);
+            if (node.tagName === "DIV") return node;
+            node = node.parentNode;
+        }
+        return null;
     };
 };

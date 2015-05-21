@@ -10,7 +10,7 @@ addSearch(Mentions);
 addView(Mentions);
 
 // TODO - document this...
-// ajax = { path: "", toName: Function }
+// ajax = { path: "", format: identity, queryParameter: "q" }
 
 
 function Mentions(quill, options) {
@@ -125,35 +125,6 @@ Mentions.prototype.addMentionHandler = function addMentionHandler(e) {
     this.quill.setSelection(toFocus, toFocus);
     this.hide();
     e.stopPropagation();
-};
-
-
-
-
-// This is how the link-toolitp finds an anchor tag...
-Mentions.prototype._findMentionNode = function _findNode(range) {
-
-    var text = this.quill.getText(0, range.end),
-        index = text.lastIndexOf("@"),
-        result;
-
-    this.isMentioning = (index !== -1);
-
-
-    var leafAndOffset = this.quill.editor.doc.findLeafAt(range.start, true),
-        leaf = leafAndOffset[0],
-        offset = leafAndOffset[1];
-    var node;
-
-    if (leaf) node = leaf.node;
-
-    while (node && node !== this.quill.root) {
-        if (node.tagName == 'DIV') {
-            return node;
-        }
-        node = node.parentNode;
-    }
-    return null;
 };
 
 module.exports = Mentions;
