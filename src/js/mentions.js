@@ -24,6 +24,7 @@ function Mentions(quill, options) {
         matcher: /@([a-z]+\ ?[a-z]*$)/i,  // TODO - is using a literal space in this REGEX okay?
         mentionClass: "mention-item",
         offset: 10,
+        queryParameter: "q",
         template: template,
     };
 
@@ -65,6 +66,7 @@ Mentions.prototype.textChangeHandler = function textChangeHandler(_delta) {
         that = this;
         // todo - remember last ajax request, and if it's still pending, cancel it.
         //       ... to that end, just use promises.
+
         this.search(queryString, function(data) {
             console.log("Callback data: ", data);
             that.currentChoices = data.slice(0, that.options.choiceMax);
