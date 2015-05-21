@@ -107,11 +107,12 @@ Mentions.prototype.addMentionHandler = function addMentionHandler(e) {
     console.log("Current selection when a choice is clicked: ", this.range);
     var target = e.target || e.srcElement,
         insertAt = this.currentMention.index,
-        toInsert = "@"+target.innerText;
+        toInsert = "@"+target.innerText,
+        toFocus = insertAt + toInsert.length + 1;
     this.quill.deleteText(insertAt, insertAt + this.currentMention[0].length);
     this.quill.insertText(insertAt, toInsert, "mention", this.options.mentionClass);
     this.quill.insertText(insertAt + toInsert.length, " ");
-    this.quill.setSelection(insertAt + toInsert.length + 1, insertAt + toInsert.length + 1);
+    this.quill.setSelection(toFocus, toFocus);
     this.hide();
     e.stopPropagation();
 };
