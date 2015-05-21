@@ -195,12 +195,12 @@ module.exports = function addSearch(Mentions) {
 
     Mentions.prototype.ajaxSearch = function ajaxSearch(qry, callback) {
         var path = this.options.ajax.path;
-        var toName = this.options.ajax.toName || function(i) { return i; }; // TODO - move into defaults and isolate as identity function
+        var toName = this.options.ajax.toName; // TODO - move into defaults and isolate as identity function
         var qryString = encodeURIComponent(path + "?" + this.options.queryParameter + "=" + qry);
         loadJSON(this.options.ajax, function(data) {
             console.log("Ajax success! Here's the data: ", data);
             if (callback) {
-                callback(data.map(toName));
+                callback(data);
             } else {
                 console.log("Warning! No callback provided to ajax success...");
             }
