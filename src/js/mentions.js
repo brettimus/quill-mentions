@@ -63,6 +63,8 @@ Mentions.prototype.textChangeHandler = function textChangeHandler(_delta) {
         this.currentMention = mention;
         queryString = mention[0].replace("@", "");
         that = this;
+        // todo - remember last ajax request, and if it's still pending, cancel it.
+        //       ... to that end, just use promises.
         this.search(queryString, function(data) {
             console.log("Callback data: ", data);
             that.currentChoices = data.slice(0, that.options.choiceMax);

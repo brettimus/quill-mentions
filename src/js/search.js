@@ -23,7 +23,7 @@ module.exports = function addSearch(Mentions) {
         var path = this.options.ajax.path;
         var toName = this.options.ajax.toName; // TODO - provide identity function as default (but do the default handling in teh constructor plz)
         var qryString = encodeURIComponent(path + "?" + this.options.queryParameter + "=" + qry);
-        loadJSON(path, function(data) {
+        loadJSON(qryString, function(data) {
             console.log("Ajax success! Here's the data: ", data);
             if (callback) {
                 callback(data.map(toName));
