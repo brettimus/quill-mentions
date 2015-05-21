@@ -83,6 +83,8 @@ Mentions.prototype.textChangeHandler = function textChangeHandler(_delta) {
         this.currentMention = mention;
         queryString = mention[0].replace("@", "");
         that = this;
+        // todo - remember last ajax request, and if it's still pending, cancel it.
+        //       ... to that end, just use promises.
         this.search(queryString, function(data) {
             console.log("Callback data: ", data);
             that.currentChoices = data.slice(0, that.options.choiceMax);
@@ -197,7 +199,7 @@ module.exports = function addSearch(Mentions) {
         var path = this.options.ajax.path;
         var toName = this.options.ajax.toName; // TODO - provide identity function as default (but do the default handling in teh constructor plz)
         var qryString = encodeURIComponent(path + "?" + this.options.queryParameter + "=" + qry);
-        loadJSON(path, function(data) {
+        loadJSON(qryString, function(data) {
             console.log("Ajax success! Here's the data: ", data);
             if (callback) {
                 callback(data.map(toName));
