@@ -20,7 +20,6 @@ global.QuillMentions = require("./mentions");
 },{"./mentions":3}],3:[function(require,module,exports){
 var template = require("./template");
 var extend = require("./utilities/extend");
-var loadJSON = require("./utilities/ajax").loadJSON;
 
 var addFormat = require("./format");
 var addSearch = require("./search");
@@ -29,6 +28,9 @@ var addView = require("./view");
 addFormat(Mentions);
 addSearch(Mentions);
 addView(Mentions);
+
+// TODO - document this...
+// ajax = { path: "", toName: Function }
 
 
 function Mentions(quill, options) {
@@ -75,16 +77,18 @@ Mentions.prototype.addListeners = function addListeners() {
 
 Mentions.prototype.textChangeHandler = function textChangeHandler(_delta) {
     var mention = this.findMention(),
-        queryString;
+        queryString,
+        that;
     if (mention) {
         this.currentMention = mention;
         queryString = mention[0].replace("@", "");
-        this.search.call(this, queryString, function(data) {
+        that = this;
+        this.search(queryString, function(data) {
             console.log("Callback data: ", data);
-            this.currentChoices = data.slice(0, this.options.choiceMax);
-            console.log("Callback currentChoices: ", this.currentChoices);
-            this.renderCurrentChoices();
-            this.show();
+            that.currentChoices = data.slice(0, that.options.choiceMax);
+            console.log("Callback currentChoices: ", that.currentChoices);
+            that.renderCurrentChoices();
+            that.show();
         });
     }
     else if (this.container.style.left !== this.options.hideMargin) {
@@ -167,7 +171,7 @@ Mentions.prototype._findMentionNode = function _findNode(range) {
 };
 
 module.exports = Mentions;
-},{"./format":1,"./search":4,"./template":5,"./utilities/ajax":6,"./utilities/extend":7,"./view":8}],4:[function(require,module,exports){
+},{"./format":1,"./search":4,"./template":5,"./utilities/extend":7,"./view":8}],4:[function(require,module,exports){
 var loadJSON = require("./utilities/ajax").loadJSON;
 
 module.exports = function addSearch(Mentions) {
@@ -181,7 +185,6 @@ module.exports = function addSearch(Mentions) {
     };
 
     Mentions.prototype.staticSearch = function staticSearch(qry, callback) {
-        qry = qry.replace("@", "");
         var data = this.options.choices.filter(function(choice) {
             // TODO - use case insensitive regexp
             return choice.name.toLowerCase().indexOf(qry.toLowerCase()) !== -1;
@@ -191,12 +194,13 @@ module.exports = function addSearch(Mentions) {
     };
 
     Mentions.prototype.ajaxSearch = function ajaxSearch(qry, callback) {
-        qry = qry.replace("@", "");
-        var qryString = encodeURIComponent(this.options.ajax + "?" + this.options.queryParameter + "=" + qry);
+        var path = this.options.ajax.path;
+        var toName = this.options.ajax.toName || function(i) { return i; }; // TODO - move into defaults and isolate as identity function
+        var qryString = encodeURIComponent(path + "?" + this.options.queryParameter + "=" + qry);
         loadJSON(this.options.ajax, function(data) {
             console.log("Ajax success! Here's the data: ", data);
             if (callback) {
-                callback(data);
+                callback(data.map(toName));
             } else {
                 console.log("Warning! No callback provided to ajax success...");
             }

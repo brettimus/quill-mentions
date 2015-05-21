@@ -11,7 +11,6 @@ module.exports = function addSearch(Mentions) {
     };
 
     Mentions.prototype.staticSearch = function staticSearch(qry, callback) {
-        qry = qry.replace("@", "");
         var data = this.options.choices.filter(function(choice) {
             // TODO - use case insensitive regexp
             return choice.name.toLowerCase().indexOf(qry.toLowerCase()) !== -1;
@@ -21,12 +20,13 @@ module.exports = function addSearch(Mentions) {
     };
 
     Mentions.prototype.ajaxSearch = function ajaxSearch(qry, callback) {
-        qry = qry.replace("@", "");
-        var qryString = encodeURIComponent(this.options.ajax + "?" + this.options.queryParameter + "=" + qry);
+        var path = this.options.ajax.path;
+        var toName = this.options.ajax.toName || function(i) { return i; }; // TODO - move into defaults and isolate as identity function
+        var qryString = encodeURIComponent(path + "?" + this.options.queryParameter + "=" + qry);
         loadJSON(this.options.ajax, function(data) {
             console.log("Ajax success! Here's the data: ", data);
             if (callback) {
-                callback(data);
+                callback(data.map(toName));
             } else {
                 console.log("Warning! No callback provided to ajax success...");
             }

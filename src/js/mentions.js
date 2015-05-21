@@ -9,6 +9,9 @@ addFormat(Mentions);
 addSearch(Mentions);
 addView(Mentions);
 
+// TODO - document this...
+// ajax = { path: "", toName: Function }
+
 
 function Mentions(quill, options) {
     var defaults = {
@@ -54,17 +57,19 @@ Mentions.prototype.addListeners = function addListeners() {
 
 Mentions.prototype.textChangeHandler = function textChangeHandler(_delta) {
     var mention = this.findMention(),
-        queryString;
+        queryString,
+        that;
     if (mention) {
         this.currentMention = mention;
         queryString = mention[0].replace("@", "");
+        that = this;
         this.search(queryString, function(data) {
             console.log("Callback data: ", data);
-            this.currentChoices = data.slice(0, this.options.choiceMax);
-            console.log("Callback currentChoices: ", this.currentChoices);
-            this.renderCurrentChoices();
-            this.show();
-        }.bind(this));
+            that.currentChoices = data.slice(0, that.options.choiceMax);
+            console.log("Callback currentChoices: ", that.currentChoices);
+            that.renderCurrentChoices();
+            that.show();
+        });
     }
     else if (this.container.style.left !== this.options.hideMargin) {
         this.currentMention = null;
