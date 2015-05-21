@@ -18,5 +18,6 @@ module.exports = {
         };
         xhr.open("GET", path, true);
         xhr.send();
+        return xhr;
     },
 };

@@ -1,6 +1,6 @@
 var template = require("./template");
 var extend = require("./utilities/extend");
-
+var identity = require("./utilities/identity");
 var addFormat = require("./format");
 var addSearch = require("./search");
 var addView = require("./view");
@@ -14,6 +14,11 @@ addView(Mentions);
 
 
 function Mentions(quill, options) {
+    var ajaxDefaults = {
+        path: null,
+        format: identity,
+        queryParameter: "q",
+    };
     var defaults = {
         ajax: false,
         choiceMax: 10,
@@ -24,11 +29,13 @@ function Mentions(quill, options) {
         matcher: /@([a-z]+\ ?[a-z]*$)/i,  // TODO - is using a literal space in this REGEX okay?
         mentionClass: "mention-item",
         offset: 10,
-        queryParameter: "q",
         template: template,
     };
 
     this.options = extend({}, defaults, options);
+    if (this.options.ajax) {
+        this.options.ajax = extend({}, ajaxDefaults, this.options.ajax);
+    }
     this.quill = quill;
     this.addFormat(); // adds custom format for mentions
 
@@ -64,13 +71,8 @@ Mentions.prototype.textChangeHandler = function textChangeHandler(_delta) {
         this.currentMention = mention;
         queryString = mention[0].replace("@", "");
         that = this;
-        // todo - remember last ajax request, and if it's still pending, cancel it.
-        //       ... to that end, just use promises.
-
         this.search(queryString, function(data) {
-            console.log("Callback data: ", data);
             that.currentChoices = data.slice(0, that.options.choiceMax);
-            console.log("Callback currentChoices: ", that.currentChoices);
             that.renderCurrentChoices();
             that.show();
         });

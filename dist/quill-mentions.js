@@ -20,7 +20,7 @@ global.QuillMentions = require("./mentions");
 },{"./mentions":3}],3:[function(require,module,exports){
 var template = require("./template");
 var extend = require("./utilities/extend");
-
+var identity = require("./utilities/identity");
 var addFormat = require("./format");
 var addSearch = require("./search");
 var addView = require("./view");
@@ -34,6 +34,11 @@ addView(Mentions);
 
 
 function Mentions(quill, options) {
+    var ajaxDefaults = {
+        path: null,
+        format: identity,
+        queryParameter: "q",
+    };
     var defaults = {
         ajax: false,
         choiceMax: 10,
@@ -44,11 +49,13 @@ function Mentions(quill, options) {
         matcher: /@([a-z]+\ ?[a-z]*$)/i,  // TODO - is using a literal space in this REGEX okay?
         mentionClass: "mention-item",
         offset: 10,
-        queryParameter: "q",
         template: template,
     };
 
     this.options = extend({}, defaults, options);
+    if (this.options.ajax) {
+        this.options.ajax = extend({}, ajaxDefaults, this.options.ajax);
+    }
     this.quill = quill;
     this.addFormat(); // adds custom format for mentions
 
@@ -84,13 +91,8 @@ Mentions.prototype.textChangeHandler = function textChangeHandler(_delta) {
         this.currentMention = mention;
         queryString = mention[0].replace("@", "");
         that = this;
-        // todo - remember last ajax request, and if it's still pending, cancel it.
-        //       ... to that end, just use promises.
-
         this.search(queryString, function(data) {
-            console.log("Callback data: ", data);
             that.currentChoices = data.slice(0, that.options.choiceMax);
-            console.log("Callback currentChoices: ", that.currentChoices);
             that.renderCurrentChoices();
             that.show();
         });
@@ -175,7 +177,7 @@ Mentions.prototype._findMentionNode = function _findNode(range) {
 };
 
 module.exports = Mentions;
-},{"./format":1,"./search":4,"./template":5,"./utilities/extend":7,"./view":8}],4:[function(require,module,exports){
+},{"./format":1,"./search":4,"./template":5,"./utilities/extend":7,"./utilities/identity":8,"./view":9}],4:[function(require,module,exports){
 var loadJSON = require("./utilities/ajax").loadJSON;
 
 module.exports = function addSearch(Mentions) {
@@ -189,30 +191,46 @@ module.exports = function addSearch(Mentions) {
     };
 
     Mentions.prototype.staticSearch = function staticSearch(qry, callback) {
-        var data = this.options.choices.filter(function(choice) {
-            // TODO - use case insensitive regexp
-            return choice.name.toLowerCase().indexOf(qry.toLowerCase()) !== -1;
-        });
-        if (!callback) console.log("Warning! staticSearch was not provided a callback. It's probably definitely going to error after this message, you ding-dong.");
-        callback.call(this, data);
+        var data = this.options.choices.filter(staticFilter);
+        if (!callback) noCallbackError("staticSearch");
+        callback(data);
     };
 
     Mentions.prototype.ajaxSearch = function ajaxSearch(qry, callback) {
-        var path = this.options.ajax.path;
-        var toName = this.options.ajax.toName; // TODO - provide identity function as default (but do the default handling in teh constructor plz)
-        var qryString = path + "?" + this.options.queryParameter + "=" + qry; // TODO - encodeURIComponent
-        loadJSON(qryString, function(data) {
-            console.log("Ajax success! Here's the data: ", data);
-            if (callback) {
-                callback(data.map(toName));
-            } else {
-                console.log("Warning! No callback provided to ajax success...");
-            }
-        }.bind(this), function(error) {
-            console.log("Loading json errored...", error);
-        });
+        // TODO - remember last ajax request, and if it's still pending, cancel it.
+        //       ... to that end, just use promises.
+
+        if (ajaxSearch.latest) ajaxSearch.latest.abort();
+
+        var path = this.options.ajax.path,
+            formatData = this.options.ajax.format,
+            queryParameter = this.options.ajax.queryParameter,
+            qryString = path + "?" + queryParameter + "=" + encodeURIComponent(qry);
+
+        ajaxSearch.latest = loadJSON(qryString, ajaxSuccess(callback, formatData), ajaxError);
     };
 };
+
+function staticFilter(choice) {
+    // TODO - use case insensitive regexp
+    return choice.name.toLowerCase().indexOf(qry.toLowerCase()) !== -1;
+}
+
+function ajaxSuccess(callback, formatter) {
+    return function(data) {
+        console.log("Ajax success! Here's the data: ", data);
+        if (callback) callback(data.map(formatter));
+        else noCallbackError("ajaxSearch");
+    };
+}
+
+function ajaxError(error) {
+    console.log("Loading json errored...", error);
+}
+
+function noCallbackError(functionName) {
+    console.log("Warning!", functionName, "was not provided a callback. Don't be a ding-dong.");
+}
 },{"./utilities/ajax":6}],5:[function(require,module,exports){
 module.exports = '<ul>{{choices}}</ul>';
 },{}],6:[function(require,module,exports){
@@ -236,6 +254,7 @@ module.exports = {
         };
         xhr.open("GET", path, true);
         xhr.send();
+        return xhr;
     },
 };
 },{}],7:[function(require,module,exports){
@@ -262,6 +281,10 @@ function extendHelper(destination, source) {
     return destination;
 }
 },{}],8:[function(require,module,exports){
+module.exports = function identity(d) {
+    return d;
+};
+},{}],9:[function(require,module,exports){
 module.exports = function addView(Mentions) {
 
     Mentions.prototype.position = function position(reference) {
@@ -317,4 +340,4 @@ module.exports = function addView(Mentions) {
         this.container.focus();
     };
 };
-},{}]},{},[1,2,3,4,5,6,7,8]);
+},{}]},{},[1,2,3,4,5,6,7,8,9]);
