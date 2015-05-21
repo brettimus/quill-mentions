@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JSDoc: Index</title>
+    <title>JSDoc: Source: format.js</title>
     
     <script src="scripts/prettify/prettify.js"> </script>
     <script src="scripts/prettify/lang-css.js"> </script>
@@ -17,30 +17,27 @@
 
 <div id="main">
     
-    <h1 class="page-title">Index</h1>
+    <h1 class="page-title">Source: format.js</h1>
     
     
 
 
     
+    <section>
+        <article>
+            <pre class="prettyprint source"><code>/**
+ * @module format
+ */
+ 
+module.exports = addFormat;
 
-
-    <h3> </h3>
-
-
-
-
-
-
-
-
-
-    
-
-
-
-
-
+function addFormat(Mentions) {
+    Mentions.prototype.addFormat = function(className) {
+        this.quill.addFormat('mention', { tag: 'SPAN', "class": "ql-", });
+    };
+}</code></pre>
+        </article>
+    </section>
 
 
 

@@ -1,13 +1,74 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-module.exports = function addFormat(Mentions) {
+/**
+ * @module defaults/defaults
+ */
 
+var extend = require("../utilities/extend"),
+    identity = require("../utilities/identity");
+
+/**
+ * @namespace
+ * @property {object} ajax - The default ajax configuration.
+ * @property {number} choiceMax - The maximum number of possible matches to display.
+ * @property {object[]} choices - A static array of possible choices. Ignored if `ajax` is truthy.
+ * @property {string} choiceTemplate - A string used as a template for possible choices.
+ * @property {string} hideMargin - The margin used to hide the popover.
+ * @property {regexp} matcher - The regular expression used to trigger Mentions#search
+ * @property {string} mentionClass - The class given to inserted mention. Prefixed with `ql-` for now.
+ * @property {number} offset - I forogt where this is even used. Probably has to do with calculating position of popover.
+ * @property {string} template - A template for the popover, into which possible choices are inserted. 
+ */
+var defaults = {
+    ajax: false,
+    choiceMax: 10,
+    choices: [],
+    choiceTemplate: "<li>{{choice}}</li>",
+    hideMargin: '-10000px',
+    matcher: /@\w+$/i,
+    mentionClass: "mention-item",
+    offset: 10,
+    template: '<ul>{{choices}}</ul>',
+};
+
+/**
+ * @namespace
+ * @property {function} format - Mapped onto the array of possible matches returned by call to `path`. Should yield the expected interface for data, which is an object with a `name` property.
+ * @property {string} path - The path to endpoint we should query for possible matches.
+ * @property {string} queryParameter - The name of the query paramater in the url sent to `path`.
+ */
+var ajaxDefaults = {
+    format: identity,
+    path: null,
+    queryParameter: "q",
+};
+
+/**
+ * Returns a configuration object for Mentions constructor.
+ */
+function defaultFactory(options) {
+    var result = extend({}, defaults, options);
+    if (options.ajax) {
+        result.options.ajax = extend({}, ajaxDefaults, options.ajax);
+    }
+    return result;
+}
+
+module.exports = defaultFactory;
+},{"../utilities/extend":7,"../utilities/identity":8}],2:[function(require,module,exports){
+/**
+ * @module format
+ */
+ 
+module.exports = addFormat;
+
+function addFormat(Mentions) {
     Mentions.prototype.addFormat = function(className) {
         this.quill.addFormat('mention', { tag: 'SPAN', "class": "ql-", });
     };
-
-};
-},{}],2:[function(require,module,exports){
+}
+},{}],3:[function(require,module,exports){
 (function (global){
+/** @global */
 global.QuillMentions = require("./mentions");
 // if (window.Quill) {
 //     Quill.registerModule('mentions', Mentions);
@@ -17,48 +78,33 @@ global.QuillMentions = require("./mentions");
 // }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./mentions":3}],3:[function(require,module,exports){
-var template = require("./template");
-var extend = require("./utilities/extend");
-var identity = require("./utilities/identity");
+},{"./mentions":4}],4:[function(require,module,exports){
+/** 
+ * Mentions module.
+ * @module mentions
+ */
+
 var addFormat = require("./format");
 var addSearch = require("./search");
 var addView = require("./view");
+
+var defaultFactory = require("./defaults/defaults");
 
 addFormat(Mentions);
 addSearch(Mentions);
 addView(Mentions);
 
 /**
- * The Mentions module that is registered with Quill.
+ * The Mentions constructor that is registered with `Quill`.
  * @constructor
- * @param {string} quill - An instance of Quill.
- * @param {string} options - The configuration passed to QuillMentions.
+ * @param {Object} quill - An instance of `Quill`.
+ * @param {Object} [options] - The configuration passed to the mentions module. It's mixed in with defaults.
  */
 function Mentions(quill, options) {
-    var ajaxDefaults = {
-        path: null,
-        format: identity,
-        queryParameter: "q",
-    };
-    var defaults = {
-        ajax: false,
-        choiceMax: 10,
-        choices: [{ name: "Simone dB.",}, { name: "Mister P", }, { name: "Jelly O.", }, { name: "Chewie G.", }],
-        choiceTemplate: "<li>{{choice}}</li>",
-        hideMargin: '-10000px',
-        isMentioning: false,
-        matcher: /@\w+$/i,
-        mentionClass: "mention-item",
-        offset: 10,
-        template: template,
-    };
 
-    this.options = extend({}, defaults, options);
-    if (this.options.ajax) {
-        this.options.ajax = extend({}, ajaxDefaults, this.options.ajax);
-    }
+    this.options = defaultFactory(options);
     this.quill = quill;
+
     this.addFormat(); // adds custom format for mentions
 
     this.currentChoices = null;
@@ -67,8 +113,6 @@ function Mentions(quill, options) {
     this.container = this.quill.addContainer("ql-mentions");
     this.hide();
     this.addListeners();
-
-    // todo - allow custom classnames
 
 }
 
@@ -150,18 +194,37 @@ Mentions.prototype.addMentionHandler = function addMentionHandler(e) {
 };
 
 module.exports = Mentions;
-},{"./format":1,"./search":4,"./template":5,"./utilities/extend":7,"./utilities/identity":8,"./view":9}],4:[function(require,module,exports){
+},{"./defaults/defaults":1,"./format":2,"./search":5,"./view":9}],5:[function(require,module,exports){
 var loadJSON = require("./utilities/ajax").loadJSON;
 
+
+/**
+ * @callback searchCallback
+ * @param {Object[]} data - An array of objects that represent possible matches to data. The data are mapped over a formatter to provide a consistent interface.
+ */
+
+/**
+ * Dispatches search for possible matches to a query, Mention#search.
+ *
+ * @memberof Mention.prototype
+ * @instance
+ * @param {searchCallback} callback - Callback that handles the possible matches
+ */
+function search(qry, callback) {
+    var searcher = this.options.ajax ? this.ajaxSearch : this.staticSearch;
+    searcher(qry, callback);
+    // if (this.options.ajax) {
+    //     this.ajaxSearch(qry, callback);
+    // }
+    // else {
+    //     this.staticSearch(qry, callback);
+    // }
+}
+
+
+
 module.exports = function addSearch(Mentions) {
-    Mentions.prototype.search = function search(qry, callback) {
-        if (this.options.ajax) {
-            this.ajaxSearch(qry, callback);
-        }
-        else {
-            this.staticSearch(qry, callback);
-        }
-    };
+    Mentions.prototype.search = search;
 
     Mentions.prototype.staticSearch = function staticSearch(qry, callback) {
         var data = this.options.choices.filter(staticFilter);
@@ -203,9 +266,7 @@ function ajaxError(error) {
 function noCallbackError(functionName) {
     console.log("Warning!", functionName, "was not provided a callback. Don't be a ding-dong.");
 }
-},{"./utilities/ajax":6}],5:[function(require,module,exports){
-module.exports = '<ul>{{choices}}</ul>';
-},{}],6:[function(require,module,exports){
+},{"./utilities/ajax":6}],6:[function(require,module,exports){
 module.exports = {
 
     // from stackoverflow 
@@ -230,8 +291,17 @@ module.exports = {
     },
 };
 },{}],7:[function(require,module,exports){
-module.exports = function extend() {
-    // extends an arbitrary number of objects
+/**
+ * Extend module
+ * @module utilities/extend
+ */
+module.exports = extend;
+
+/**
+ * Shallow-copies an arbitrary number of objects' properties into the first argument. Applies "last-in-wins" policy to conflicting property names.
+ * @param {...Object} o - An object
+ */
+function extend(o) {
     var args   = [].slice.call(arguments, 0),
         result = args[0];
 
@@ -240,8 +310,13 @@ module.exports = function extend() {
     }
 
     return result;
-};
+}
 
+/**
+ * Shallow-copies one object into another.
+ * @param {Object} destination - Object into which `source` properties will be copied.
+ * @param {Object} source - Object whose properties will be copied into `destination`.
+ */
 function extendHelper(destination, source) {
     // thanks be to angus kroll
     // https://javascriptweblog.wordpress.com/2011/05/31/a-fresh-look-at-javascript-mixins/
