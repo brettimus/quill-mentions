@@ -6,8 +6,8 @@ module.exports = function(grunt) {
         pkg: grunt.file.readJSON('package.json'),
         watch: {
             js: {
-                files: ['dist/quill-mentions.js'],
-                tasks: ['uglify']
+                files: ['src/js/**/*.js', 'dist/quill-mentions.js'],
+                tasks: ['browserify', 'uglify']
             }
         },
         browserify: {
@@ -35,7 +35,15 @@ module.exports = function(grunt) {
             }
           }
         },
+        jsdoc: {
+            dist: {
+                src: ['src/js/**/*.js'],
+                options: {
+                    destination: 'docs'
+                }
+            },
+        },
     });
 
-    grunt.registerTask('default', ['browserify', 'uglify', 'sass']);
+    grunt.registerTask('default', ['browserify', 'uglify', 'sass', 'jsdoc']);
 };

@@ -2,6 +2,10 @@
   "name": "quill-mentions",
   "version": "0.0.1",
   "description": "a module for integrating mentions into quill.js",
+  "main": "src/js/mentions.js",
+  "directories": {
+    "doc": "docs"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -12,6 +16,7 @@
     "grunt-browserify": "~3.3.0",
     "grunt-contrib-sass": "~0.9.2",
     "grunt-contrib-uglify": "~0.7.0",
-    "matchdep": "~0.3.0"
+    "matchdep": "~0.3.0",
+    "grunt-jsdoc": "~0.5.8"
   }
 }

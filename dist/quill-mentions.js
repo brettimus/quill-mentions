@@ -29,10 +29,12 @@ addFormat(Mentions);
 addSearch(Mentions);
 addView(Mentions);
 
-// TODO - document this...
-// ajax = { path: "", format: identity, queryParameter: "q" }
-
-
+/**
+ * The Mentions module that is registered with Quill.
+ * @constructor
+ * @param {string} quill - An instance of Quill.
+ * @param {string} options - The configuration passed to QuillMentions.
+ */
 function Mentions(quill, options) {
     var ajaxDefaults = {
         path: null,
@@ -66,7 +68,7 @@ function Mentions(quill, options) {
     this.hide();
     this.addListeners();
 
-    // todo - allow custom classes
+    // todo - allow custom classnames
 
 }
 
