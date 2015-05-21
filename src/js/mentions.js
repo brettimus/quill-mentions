@@ -1,6 +1,5 @@
 var template = require("./template");
 var extend = require("./utilities/extend");
-var loadJSON = require("./utilities/ajax").loadJSON;
 
 var addFormat = require("./format");
 var addSearch = require("./search");
@@ -59,13 +58,13 @@ Mentions.prototype.textChangeHandler = function textChangeHandler(_delta) {
     if (mention) {
         this.currentMention = mention;
         queryString = mention[0].replace("@", "");
-        this.search.call(this, queryString, function(data) {
+        this.search(queryString, function(data) {
             console.log("Callback data: ", data);
             this.currentChoices = data.slice(0, this.options.choiceMax);
             console.log("Callback currentChoices: ", this.currentChoices);
             this.renderCurrentChoices();
             this.show();
-        });
+        }.bind(this));
     }
     else if (this.container.style.left !== this.options.hideMargin) {
         this.currentMention = null;
