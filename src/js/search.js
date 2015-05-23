@@ -1,17 +1,13 @@
 var loadJSON = require("./utilities/ajax").loadJSON;
-
 /**
  * @callback searchCallback
  * @param {Object[]} data - An array of objects that represent possible matches to data. The data are mapped over a formatter to provide a consistent interface.
  */
 
-
 function search(qry, callback) {
     var searcher = this.options.ajax ? this.ajaxSearch : this.staticSearch;
     searcher.call(this, qry, callback);
 }
-
-
 
 module.exports = function addSearch(QuillMentions) {
     /**
@@ -28,7 +24,7 @@ module.exports = function addSearch(QuillMentions) {
      * @param {searchCallback} callback - Callback that handles possible matches
      */
     QuillMentions.prototype.staticSearch = function staticSearch(qry, callback) {
-        var data = this.options.choices.filter(staticFilter);
+        var data = this.options.choices.filter(staticFilter(qry));
         if (!callback) noCallbackError("staticSearch");
         callback(data);
     };
@@ -53,9 +49,11 @@ module.exports = function addSearch(QuillMentions) {
     };
 };
 
-function staticFilter(choice) {
-    // TODO - use case insensitive regexp
-    return choice.name.toLowerCase().indexOf(qry.toLowerCase()) !== -1;
+function staticFilter(qry) {
+    return function(choice) {
+        // TODO - use case insensitive regexp
+        return choice.name.toLowerCase().indexOf(qry.toLowerCase()) !== -1;
+    };
 }
 
 function ajaxSuccess(callback, formatter) {

@@ -24,7 +24,7 @@ function QuillMentions(quill, options) {
 
     this.quill = quill;
     this.options = defaultFactory(options);
-    this.container = this.quill.addContainer("ql-mentions");
+    this.container = this.quill.addContainer(this.options.containerClassName);
     this.currentChoices = null;
     this.currentMention = null;
 

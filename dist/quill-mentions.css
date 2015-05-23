@@ -1,24 +1,31 @@
+.ql-mentions ul, .ql-mentions-static ul {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+}
+.ql-mentions ul li, .ql-mentions-static ul li {
+  border-bottom: solid thin #ddd;
+  cursor: pointer;
+  padding: 8px 12px 8px 12px;
+}
+.ql-mentions ul li:last-child, .ql-mentions-static ul li:last-child {
+  border-bottom: none;
+}
+.ql-mentions ul li:hover, .ql-mentions-static ul li:hover {
+  background: #888;
+  color: white;
+}
+
 .ql-mentions {
   border: solid thin #888;
   padding: 0;
   position: absolute;
 }
-.ql-mentions ul {
-  list-style-type: none;
-  margin: 0;
+
+.ql-mentions-static {
+  border: solid thin #888;
   padding: 0;
-}
-.ql-mentions ul li {
-  border-bottom: solid thin #ddd;
-  cursor: pointer;
-  padding: 8px 12px 8px 12px;
-}
-.ql-mentions ul li:last-child {
-  border-bottom: none;
-}
-.ql-mentions ul li:hover {
-  background: #888;
-  color: white;
+  position: static;
 }
 
 .ql-mention-item {

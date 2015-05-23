@@ -1,10 +1,6 @@
 $faux-link: #2ba6cb;
 
-.ql-mentions {
-  border: solid thin #888;
-  padding: 0;
-  position: absolute;
-
+%ql-mentions-base {
   ul {
     list-style-type: none;
     margin: 0;
@@ -26,6 +22,23 @@ $faux-link: #2ba6cb;
     }
   }
 }
+
+.ql-mentions {
+  border: solid thin #888;
+  padding: 0;
+  position: absolute;
+
+  @extend %ql-mentions-base;
+}
+
+.ql-mentions-static {
+  border: solid thin #888;
+  padding: 0;
+  position: static;
+
+  @extend %ql-mentions-base;
+}
+
 .ql-mention-item {
   color: $faux-link;
   text-decoration: underline;

@@ -3,6 +3,7 @@ module.exports = function addView(QuillMentions) {
     /**
      * @method
      * @param {Object} reference
+     * @return {number[]}
      */
     QuillMentions.prototype.position = function position(reference) {
         var referenceBounds,

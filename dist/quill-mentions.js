@@ -12,6 +12,7 @@ var extend = require("../utilities/extend"),
  * @property {number} choiceMax - The maximum number of possible matches to display.
  * @property {object[]} choices - A static array of possible choices. Ignored if `ajax` is truthy.
  * @property {string} choiceTemplate - A string used as a template for possible choices.
+ * @property {string} containerClassName - The class attached to the mentions view container.
  * @property {string} hideMargin - The margin used to hide the popover.
  * @property {regexp} matcher - The regular expression used to trigger Mentions#search
  * @property {string} mentionClass - The class given to inserted mention. Prefixed with `ql-` for now.
@@ -23,6 +24,7 @@ var defaults = {
     choiceMax: 10,
     choices: [],
     choiceTemplate: "<li>{{choice}}</li>",
+    containerClassName: "ql-mentions",
     hideMargin: '-10000px',
     matcher: /@\w+$/i,
     mentionClass: "mention-item",
@@ -68,7 +70,6 @@ function addFormat(QuillMentions) {
 },{}],3:[function(require,module,exports){
 (function (global){
 global.QuillMentions = require("./mentions");
-
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{"./mentions":4}],4:[function(require,module,exports){
 var addFormat = require("./format"),
@@ -97,7 +98,7 @@ function QuillMentions(quill, options) {
 
     this.quill = quill;
     this.options = defaultFactory(options);
-    this.container = this.quill.addContainer("ql-mentions");
+    this.container = this.quill.addContainer(this.options.containerClassName);
     this.currentChoices = null;
     this.currentMention = null;
 
@@ -194,19 +195,15 @@ QuillMentions.prototype.addMentionHandler = function addMentionHandler(e) {
 
 },{"./defaults/defaults":1,"./format":2,"./search":5,"./view":9}],5:[function(require,module,exports){
 var loadJSON = require("./utilities/ajax").loadJSON;
-
 /**
  * @callback searchCallback
  * @param {Object[]} data - An array of objects that represent possible matches to data. The data are mapped over a formatter to provide a consistent interface.
  */
 
-
 function search(qry, callback) {
     var searcher = this.options.ajax ? this.ajaxSearch : this.staticSearch;
     searcher.call(this, qry, callback);
 }
-
-
 
 module.exports = function addSearch(QuillMentions) {
     /**
@@ -223,7 +220,7 @@ module.exports = function addSearch(QuillMentions) {
      * @param {searchCallback} callback - Callback that handles possible matches
      */
     QuillMentions.prototype.staticSearch = function staticSearch(qry, callback) {
-        var data = this.options.choices.filter(staticFilter);
+        var data = this.options.choices.filter(staticFilter(qry));
         if (!callback) noCallbackError("staticSearch");
         callback(data);
     };
@@ -248,9 +245,11 @@ module.exports = function addSearch(QuillMentions) {
     };
 };
 
-function staticFilter(choice) {
-    // TODO - use case insensitive regexp
-    return choice.name.toLowerCase().indexOf(qry.toLowerCase()) !== -1;
+function staticFilter(qry) {
+    return function(choice) {
+        // TODO - use case insensitive regexp
+        return choice.name.toLowerCase().indexOf(qry.toLowerCase()) !== -1;
+    };
 }
 
 function ajaxSuccess(callback, formatter) {
@@ -349,6 +348,7 @@ module.exports = function addView(QuillMentions) {
     /**
      * @method
      * @param {Object} reference
+     * @return {number[]}
      */
     QuillMentions.prototype.position = function position(reference) {
         var referenceBounds,
