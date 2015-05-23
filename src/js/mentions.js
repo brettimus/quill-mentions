@@ -1,54 +1,55 @@
-/** 
- * Mentions module.
- * @module mentions
- */
-
-var addFormat = require("./format");
-var addSearch = require("./search");
-var addView = require("./view");
+var addFormat = require("./format"),
+    addSearch = require("./search"),
+    addView = require("./view");
 
 var defaultFactory = require("./defaults/defaults");
 
-addFormat(Mentions);
-addSearch(Mentions);
-addView(Mentions);
+addFormat(QuillMentions);
+addSearch(QuillMentions);
+addView(QuillMentions);
+
+module.exports = QuillMentions;
 
 /**
- * The Mentions constructor that is registered with `Quill`.
  * @constructor
  * @param {Object} quill - An instance of `Quill`.
- * @param {Object} [options] - The configuration passed to the mentions module. It's mixed in with defaults.
+ * @param {Object} [options] - User configuration passed to the mentions module. It's mixed in with defaults.
+ * @property {Object} quill - Instance of quill editor.
+ * @property {Object} options - Default configuration mixed in with user configuration.
+ * @property {Object} container - DOM node that contains the mention choices.
+ * @property {Object[]|null} currentChoices - 
+ * @property {Object|null} currentMention
  */
-function Mentions(quill, options) {
+function QuillMentions(quill, options) {
 
-    this.options = defaultFactory(options);
     this.quill = quill;
-
-    this.addFormat(); // adds custom format for mentions
-
+    this.options = defaultFactory(options);
+    this.container = this.quill.addContainer("ql-mentions");
     this.currentChoices = null;
     this.currentMention = null;
 
-    this.container = this.quill.addContainer("ql-mentions");
     this.hide();
+    this.addFormat(); // adds custom format for mentions
     this.addListeners();
-
 }
 
-Mentions.prototype.addListeners = function addListeners() {
-    var textChangeHandler = this.textChangeHandler.bind(this);
-    var selectionChangeHandler = this.selectionChangeHandler.bind(this);
-    var addMentionHandler = this.addMentionHandler.bind(this);
+/**
+ * @method
+ */
+QuillMentions.prototype.addListeners = function addListeners() {
+    var textChangeHandler = this.textChangeHandler.bind(this),
+        addMentionHandler = this.addMentionHandler.bind(this);
 
     this.quill.on(this.quill.constructor.events.TEXT_CHANGE, textChangeHandler);
-    // this.quill.on(this.quill.constructor.events.SELECTION_CHANGE, selectionChangeHandler);
-
 
     this.container.addEventListener('click', addMentionHandler, false);
     this.container.addEventListener('touchend', addMentionHandler, false);
 };
 
-Mentions.prototype.textChangeHandler = function textChangeHandler(_delta) {
+/**
+ * @method
+ */
+QuillMentions.prototype.textChangeHandler = function textChangeHandler(_delta) {
     var mention = this.findMention(),
         queryString,
         that;
@@ -69,11 +70,11 @@ Mentions.prototype.textChangeHandler = function textChangeHandler(_delta) {
     }
 };
 
-Mentions.prototype.selectionChangeHandler = function selectionChangeHandler(range) {
-    throw new Error("No idea what to do with a selection-change event");
-};
-
-Mentions.prototype.findMention = function findMention() {
+/**
+ * @method
+ * @return {Match}
+ */
+QuillMentions.prototype.findMention = function findMention() {
     var contents,
         match;
 
@@ -84,7 +85,10 @@ Mentions.prototype.findMention = function findMention() {
     return match;
 };
 
-Mentions.prototype.renderCurrentChoices = function renderCurrentChoices() {
+/**
+ * @method
+ */
+QuillMentions.prototype.renderCurrentChoices = function renderCurrentChoices() {
     if (this.currentChoices && this.currentChoices.length) {
         var choices = this.currentChoices.map(function(choice) {
             return this.options.choiceTemplate.replace("{{choice}}", choice.name).replace("{{data}}", choice.data);
@@ -94,11 +98,13 @@ Mentions.prototype.renderCurrentChoices = function renderCurrentChoices() {
     else {
         // render helpful message about nothing matching so far...
         this.container.innerHTML = this.options.template.replace("{{choices}}", "<li><i>Womp womp...</i></li>");
-
     }
 };
 
-Mentions.prototype.addMentionHandler = function addMentionHandler(e) {
+/**
+ * @method
+ */
+QuillMentions.prototype.addMentionHandler = function addMentionHandler(e) {
     console.log("Current selection when a choice is clicked: ", this.range);
     var target = e.target || e.srcElement,
         insertAt = this.currentMention.index,
@@ -112,4 +118,3 @@ Mentions.prototype.addMentionHandler = function addMentionHandler(e) {
     e.stopPropagation();
 };
 
-module.exports = Mentions;

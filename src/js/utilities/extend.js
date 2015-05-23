@@ -6,7 +6,8 @@ module.exports = extend;
 
 /**
  * Shallow-copies an arbitrary number of objects' properties into the first argument. Applies "last-in-wins" policy to conflicting property names.
- * @param {...Object} o - An object
+ * @function extend
+ * @param {...Object} o
  */
 function extend(o) {
     var args   = [].slice.call(arguments, 0),
@@ -21,6 +22,7 @@ function extend(o) {
 
 /**
  * Shallow-copies one object into another.
+ * @function extendHelper
  * @param {Object} destination - Object into which `source` properties will be copied.
  * @param {Object} source - Object whose properties will be copied into `destination`.
  */

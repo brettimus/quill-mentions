@@ -1,7 +1,11 @@
+/** @module utilities/ajax */
 module.exports = {
 
     // from stackoverflow 
     // https://stackoverflow.com/questions/9838812/how-can-i-open-a-json-file-in-javascript-without-jquery
+    /**
+     * @function loadJSON
+     */
     loadJSON: function loadJSON(path, success, error) {
         var xhr = new XMLHttpRequest();
         xhr.onreadystatechange = function()

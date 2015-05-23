@@ -1,7 +1,3 @@
-/**
- * Search module
- * @module search
- */
 var loadJSON = require("./utilities/ajax").loadJSON;
 
 /**
@@ -9,14 +5,7 @@ var loadJSON = require("./utilities/ajax").loadJSON;
  * @param {Object[]} data - An array of objects that represent possible matches to data. The data are mapped over a formatter to provide a consistent interface.
  */
 
-/**
- * Dispatches search for possible matches to a query, Mention#search.
- *
- * Mention#search
- * @memberof Mention.prototype
- * @this Mention
- * @param {searchCallback} callback - Callback that handles the possible matches
- */
+
 function search(qry, callback) {
     var searcher = this.options.ajax ? this.ajaxSearch : this.staticSearch;
     searcher.call(this, qry, callback);
@@ -24,16 +13,32 @@ function search(qry, callback) {
 
 
 
-module.exports = function addSearch(Mentions) {
-    Mentions.prototype.search = search;
+module.exports = function addSearch(QuillMentions) {
+    /**
+     * Dispatches search for possible matches to a query.
+     * @method 
+     * @param {string} qry
+     * @param {searchCallback} callback - Callback that handles the possible matches
+     */
+    QuillMentions.prototype.search = search;
 
-    Mentions.prototype.staticSearch = function staticSearch(qry, callback) {
+    /**
+     * @method
+     * @param {string} qry
+     * @param {searchCallback} callback - Callback that handles possible matches
+     */
+    QuillMentions.prototype.staticSearch = function staticSearch(qry, callback) {
         var data = this.options.choices.filter(staticFilter);
         if (!callback) noCallbackError("staticSearch");
         callback(data);
     };
 
-    Mentions.prototype.ajaxSearch = function ajaxSearch(qry, callback) {
+    /**
+     * @method
+     * @param {string} qry
+     * @param {searchCallback} callback - Callback that handles possible matches
+     */
+    QuillMentions.prototype.ajaxSearch = function ajaxSearch(qry, callback) {
         // TODO - remember last ajax request, and if it's still pending, cancel it.
         //       ... to that end, just use promises.
 

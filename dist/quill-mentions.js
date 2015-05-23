@@ -55,81 +55,74 @@ function defaultFactory(options) {
 
 module.exports = defaultFactory;
 },{"../utilities/extend":7,"../utilities/identity":8}],2:[function(require,module,exports){
-/**
- * @module format
- */
- 
 module.exports = addFormat;
 
-function addFormat(Mentions) {
-    Mentions.prototype.addFormat = function(className) {
+function addFormat(QuillMentions) {
+    /**
+     * @method
+     */
+    QuillMentions.prototype.addFormat = function(className) {
         this.quill.addFormat('mention', { tag: 'SPAN', "class": "ql-", });
     };
 }
 },{}],3:[function(require,module,exports){
 (function (global){
-/** @global */
 global.QuillMentions = require("./mentions");
-// if (window.Quill) {
-//     Quill.registerModule('mentions', Mentions);
-// }
-// else {
-//     throw new Error("Quill is not defined in the global scope.");
-// }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{"./mentions":4}],4:[function(require,module,exports){
-/** 
- * Mentions module.
- * @module mentions
- */
-
-var addFormat = require("./format");
-var addSearch = require("./search");
-var addView = require("./view");
+var addFormat = require("./format"),
+    addSearch = require("./search"),
+    addView = require("./view");
 
 var defaultFactory = require("./defaults/defaults");
 
-addFormat(Mentions);
-addSearch(Mentions);
-addView(Mentions);
+addFormat(QuillMentions);
+addSearch(QuillMentions);
+addView(QuillMentions);
+
+module.exports = QuillMentions;
 
 /**
- * The Mentions constructor that is registered with `Quill`.
  * @constructor
  * @param {Object} quill - An instance of `Quill`.
- * @param {Object} [options] - The configuration passed to the mentions module. It's mixed in with defaults.
+ * @param {Object} [options] - User configuration passed to the mentions module. It's mixed in with defaults.
+ * @property {Object} quill - Instance of quill editor.
+ * @property {Object} options - Default configuration mixed in with user configuration.
+ * @property {Object} container - DOM node that contains the mention choices.
+ * @property {Object[]|null} currentChoices - 
+ * @property {Object|null} currentMention
  */
-function Mentions(quill, options) {
+function QuillMentions(quill, options) {
 
-    this.options = defaultFactory(options);
     this.quill = quill;
-
-    this.addFormat(); // adds custom format for mentions
-
+    this.options = defaultFactory(options);
+    this.container = this.quill.addContainer("ql-mentions");
     this.currentChoices = null;
     this.currentMention = null;
 
-    this.container = this.quill.addContainer("ql-mentions");
     this.hide();
+    this.addFormat(); // adds custom format for mentions
     this.addListeners();
-
 }
 
-Mentions.prototype.addListeners = function addListeners() {
-    var textChangeHandler = this.textChangeHandler.bind(this);
-    var selectionChangeHandler = this.selectionChangeHandler.bind(this);
-    var addMentionHandler = this.addMentionHandler.bind(this);
+/**
+ * @method
+ */
+QuillMentions.prototype.addListeners = function addListeners() {
+    var textChangeHandler = this.textChangeHandler.bind(this),
+        addMentionHandler = this.addMentionHandler.bind(this);
 
     this.quill.on(this.quill.constructor.events.TEXT_CHANGE, textChangeHandler);
-    // this.quill.on(this.quill.constructor.events.SELECTION_CHANGE, selectionChangeHandler);
-
 
     this.container.addEventListener('click', addMentionHandler, false);
     this.container.addEventListener('touchend', addMentionHandler, false);
 };
 
-Mentions.prototype.textChangeHandler = function textChangeHandler(_delta) {
+/**
+ * @method
+ */
+QuillMentions.prototype.textChangeHandler = function textChangeHandler(_delta) {
     var mention = this.findMention(),
         queryString,
         that;
@@ -150,11 +143,11 @@ Mentions.prototype.textChangeHandler = function textChangeHandler(_delta) {
     }
 };
 
-Mentions.prototype.selectionChangeHandler = function selectionChangeHandler(range) {
-    throw new Error("No idea what to do with a selection-change event");
-};
-
-Mentions.prototype.findMention = function findMention() {
+/**
+ * @method
+ * @return {Match}
+ */
+QuillMentions.prototype.findMention = function findMention() {
     var contents,
         match;
 
@@ -165,7 +158,10 @@ Mentions.prototype.findMention = function findMention() {
     return match;
 };
 
-Mentions.prototype.renderCurrentChoices = function renderCurrentChoices() {
+/**
+ * @method
+ */
+QuillMentions.prototype.renderCurrentChoices = function renderCurrentChoices() {
     if (this.currentChoices && this.currentChoices.length) {
         var choices = this.currentChoices.map(function(choice) {
             return this.options.choiceTemplate.replace("{{choice}}", choice.name).replace("{{data}}", choice.data);
@@ -175,11 +171,13 @@ Mentions.prototype.renderCurrentChoices = function renderCurrentChoices() {
     else {
         // render helpful message about nothing matching so far...
         this.container.innerHTML = this.options.template.replace("{{choices}}", "<li><i>Womp womp...</i></li>");
-
     }
 };
 
-Mentions.prototype.addMentionHandler = function addMentionHandler(e) {
+/**
+ * @method
+ */
+QuillMentions.prototype.addMentionHandler = function addMentionHandler(e) {
     console.log("Current selection when a choice is clicked: ", this.range);
     var target = e.target || e.srcElement,
         insertAt = this.currentMention.index,
@@ -193,12 +191,8 @@ Mentions.prototype.addMentionHandler = function addMentionHandler(e) {
     e.stopPropagation();
 };
 
-module.exports = Mentions;
+
 },{"./defaults/defaults":1,"./format":2,"./search":5,"./view":9}],5:[function(require,module,exports){
-/**
- * Search module
- * @module search
- */
 var loadJSON = require("./utilities/ajax").loadJSON;
 
 /**
@@ -206,14 +200,7 @@ var loadJSON = require("./utilities/ajax").loadJSON;
  * @param {Object[]} data - An array of objects that represent possible matches to data. The data are mapped over a formatter to provide a consistent interface.
  */
 
-/**
- * Dispatches search for possible matches to a query, Mention#search.
- *
- * Mention#search
- * @memberof Mention.prototype
- * @this Mention
- * @param {searchCallback} callback - Callback that handles the possible matches
- */
+
 function search(qry, callback) {
     var searcher = this.options.ajax ? this.ajaxSearch : this.staticSearch;
     searcher.call(this, qry, callback);
@@ -221,16 +208,32 @@ function search(qry, callback) {
 
 
 
-module.exports = function addSearch(Mentions) {
-    Mentions.prototype.search = search;
+module.exports = function addSearch(QuillMentions) {
+    /**
+     * Dispatches search for possible matches to a query.
+     * @method 
+     * @param {string} qry
+     * @param {searchCallback} callback - Callback that handles the possible matches
+     */
+    QuillMentions.prototype.search = search;
 
-    Mentions.prototype.staticSearch = function staticSearch(qry, callback) {
+    /**
+     * @method
+     * @param {string} qry
+     * @param {searchCallback} callback - Callback that handles possible matches
+     */
+    QuillMentions.prototype.staticSearch = function staticSearch(qry, callback) {
         var data = this.options.choices.filter(staticFilter);
         if (!callback) noCallbackError("staticSearch");
         callback(data);
     };
 
-    Mentions.prototype.ajaxSearch = function ajaxSearch(qry, callback) {
+    /**
+     * @method
+     * @param {string} qry
+     * @param {searchCallback} callback - Callback that handles possible matches
+     */
+    QuillMentions.prototype.ajaxSearch = function ajaxSearch(qry, callback) {
         // TODO - remember last ajax request, and if it's still pending, cancel it.
         //       ... to that end, just use promises.
 
@@ -265,10 +268,14 @@ function noCallbackError(functionName) {
     console.log("Warning!", functionName, "was not provided a callback. Don't be a ding-dong.");
 }
 },{"./utilities/ajax":6}],6:[function(require,module,exports){
+/** @module utilities/ajax */
 module.exports = {
 
     // from stackoverflow 
     // https://stackoverflow.com/questions/9838812/how-can-i-open-a-json-file-in-javascript-without-jquery
+    /**
+     * @function loadJSON
+     */
     loadJSON: function loadJSON(path, success, error) {
         var xhr = new XMLHttpRequest();
         xhr.onreadystatechange = function()
@@ -297,7 +304,8 @@ module.exports = extend;
 
 /**
  * Shallow-copies an arbitrary number of objects' properties into the first argument. Applies "last-in-wins" policy to conflicting property names.
- * @param {...Object} o - An object
+ * @function extend
+ * @param {...Object} o
  */
 function extend(o) {
     var args   = [].slice.call(arguments, 0),
@@ -312,6 +320,7 @@ function extend(o) {
 
 /**
  * Shallow-copies one object into another.
+ * @function extendHelper
  * @param {Object} destination - Object into which `source` properties will be copied.
  * @param {Object} source - Object whose properties will be copied into `destination`.
  */
@@ -326,13 +335,22 @@ function extendHelper(destination, source) {
     return destination;
 }
 },{}],8:[function(require,module,exports){
-module.exports = function identity(d) {
-    return d;
-};
-},{}],9:[function(require,module,exports){
-module.exports = function addView(Mentions) {
+/** @module utilities/identity */
 
-    Mentions.prototype.position = function position(reference) {
+module.exports = identity;
+
+/** @function identity */
+function identity(d) {
+    return d;
+}
+},{}],9:[function(require,module,exports){
+module.exports = function addView(QuillMentions) {
+
+    /**
+     * @method
+     * @param {Object} reference
+     */
+    QuillMentions.prototype.position = function position(reference) {
         var referenceBounds,
             parentBounds,
             offsetLeft,
@@ -366,13 +384,20 @@ module.exports = function addView(Mentions) {
         return [left, top];
     };
 
-    Mentions.prototype.hide = function hide() {
+    /**
+     * @method
+     */
+    QuillMentions.prototype.hide = function hide() {
         this.container.style.left = this.options.hideMargin;
         if (this.range) this.quill.setSelection(this.range);
         this.range = null;
     };
 
-    Mentions.prototype.show = function show(reference) {
+    /**
+     * @method
+     * @param {Object} reference
+     */
+    QuillMentions.prototype.show = function show(reference) {
         this.range = this.quill.getSelection();
         reference = reference || this._findMentionNode(this.range);
         console.log(reference);
@@ -388,7 +413,13 @@ module.exports = function addView(Mentions) {
         this.container.focus();
     };
 
-    Mentions.prototype._findMentionNode = function _findMentionNode(range) {
+    /**
+     * @method
+     * @access private
+     * @param {Range} range
+     * @return {Node|null}
+     */
+    QuillMentions.prototype._findMentionNode = function _findMentionNode(range) {
         var leafAndOffset,
             leaf,
             offset,

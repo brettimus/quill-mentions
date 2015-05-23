@@ -84,20 +84,91 @@
     
     
     
-        <h3 class="subsection-title">Members</h3>
+    
+    
+        <h3 class="subsection-title">Methods</h3>
         
         <dl>
             
 <dt>
-    <h4 class="name" id="QuillMentions"><span class="type-signature"></span>QuillMentions<span class="type-signature"></span></h4>
+    <h4 class="name" id="extend"><span class="type-signature"></span>extend<span class="signature">(o)</span><span class="type-signature"></span></h4>
     
     
 </dt>
 <dd>
     
     
+    <div class="description">
+        Shallow-copies an arbitrary number of objects' properties into the first argument. Applies "last-in-wins" policy to conflicting property names.
+    </div>
     
 
+    
+    
+    
+    
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params">
+    <thead>
+	<tr>
+		
+		<th>Name</th>
+		
+		
+		<th>Type</th>
+		
+		
+		<th>Argument</th>
+		
+		
+		
+		
+		<th class="last">Description</th>
+	</tr>
+	</thead>
+	
+	<tbody>
+	
+	
+        <tr>
+            
+                <td class="name"><code>o</code></td>
+            
+            
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+            
+            
+                <td class="attributes">
+                
+                    
+                
+                    
+                
+                    &lt;repeatable><br>
+                
+                </td>
+            
+            
+            
+            
+            <td class="description last"></td>
+        </tr>
+	
+	
+	</tbody>
+</table>
+    
+    
     
 <dl class="details">
     
@@ -121,7 +192,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="index.js.html">index.js</a>, <a href="index.js.html#line2">line 2</a>
+        <a href="extend.js.html">utilities/extend.js</a>, <a href="extend.js.html#line7">line 7</a>
     </li></ul></dd>
     
     
@@ -134,11 +205,289 @@
 
     
     
+
+    
+
+    
+    
+    
+    
+    
+    
+    
+</dd>
+
+        
+            
+<dt>
+    <h4 class="name" id="extendHelper"><span class="type-signature"></span>extendHelper<span class="signature">(destination, source)</span><span class="type-signature"></span></h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <div class="description">
+        Shallow-copies one object into another.
+    </div>
+    
+
+    
+    
+    
+    
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params">
+    <thead>
+	<tr>
+		
+		<th>Name</th>
+		
+		
+		<th>Type</th>
+		
+		
+		
+		
+		
+		<th class="last">Description</th>
+	</tr>
+	</thead>
+	
+	<tbody>
+	
+	
+        <tr>
+            
+                <td class="name"><code>destination</code></td>
+            
+            
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last">Object into which `source` properties will be copied.</td>
+        </tr>
+	
+	
+	
+        <tr>
+            
+                <td class="name"><code>source</code></td>
+            
+            
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last">Object whose properties will be copied into `destination`.</td>
+        </tr>
+	
+	
+	</tbody>
+</table>
+    
+    
+    
+<dl class="details">
+    
+        
+    
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="extend.js.html">utilities/extend.js</a>, <a href="extend.js.html#line23">line 23</a>
+    </li></ul></dd>
+    
+    
+    
+    
+    
+    
+    
+</dl>
+
+    
+    
+
+    
+
+    
+    
+    
+    
+    
+    
+    
+</dd>
+
+        
+            
+<dt>
+    <h4 class="name" id="identity"><span class="type-signature"></span>identity<span class="signature">()</span><span class="type-signature"></span></h4>
+    
+    
+</dt>
+<dd>
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+<dl class="details">
+    
+        
+    
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="identity.js.html">utilities/identity.js</a>, <a href="identity.js.html#line5">line 5</a>
+    </li></ul></dd>
+    
+    
+    
+    
+    
+    
+    
+</dl>
+
+    
+    
+
+    
+
+    
+    
+    
+    
+    
+    
+    
+</dd>
+
+        
+            
+<dt>
+    <h4 class="name" id="loadJSON"><span class="type-signature"></span>loadJSON<span class="signature">()</span><span class="type-signature"></span></h4>
+    
+    
+</dt>
+<dd>
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+<dl class="details">
+    
+        
+    
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="ajax.js.html">utilities/ajax.js</a>, <a href="ajax.js.html#line6">line 6</a>
+    </li></ul></dd>
+    
+    
+    
+    
+    
+    
+    
+</dl>
+
+    
+    
+
+    
+
+    
+    
+    
+    
+    
+    
+    
 </dd>
 
         </dl>
-    
-    
     
     
     
@@ -232,7 +581,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="search.js.html">search.js</a>, <a href="search.js.html#line8">line 8</a>
+        <a href="search.js.html">search.js</a>, <a href="search.js.html#line3">line 3</a>
     </li></ul></dd>
     
     
@@ -271,13 +620,13 @@
 </div>
 
 <nav>
-    <h2><a href="index.html">Index</a></h2><h3>Modules</h3><ul><li><a href="defaults.html">defaults/defaults</a></li><li><a href="module-format.html">format</a></li><li><a href="module-mentions.html">mentions</a></li><li><a href="module-search.html">search</a></li><li><a href="extend.html">utilities/extend</a></li></ul><h3>Classes</h3><ul><li><a href="module-mentions-Mentions.html">Mentions</a></li></ul><h3>Namespaces</h3><ul><li><a href="defaults-ajaxDefaults.html">ajaxDefaults</a></li><li><a href="defaults-defaults.html">defaults</a></li></ul><h3>Global</h3><ul><li><a href="global.html#QuillMentions">QuillMentions</a></li></ul>
+    <h2><a href="index.html">Index</a></h2><h3>Modules</h3><ul><li><a href="defaults.html">defaults/defaults</a></li><li><a href="ajax.html">utilities/ajax</a></li><li><a href="extend.html">utilities/extend</a></li><li><a href="identity.html">utilities/identity</a></li></ul><h3>Classes</h3><ul><li><a href="QuillMentions.html">QuillMentions</a></li></ul><h3>Namespaces</h3><ul><li><a href="defaults-ajaxDefaults.html">ajaxDefaults</a></li><li><a href="defaults-defaults.html">defaults</a></li></ul><h3>Global</h3><ul><li><a href="global.html#extend">extend</a></li><li><a href="global.html#extendHelper">extendHelper</a></li><li><a href="global.html#identity">identity</a></li><li><a href="global.html#loadJSON">loadJSON</a></li></ul>
 </nav>
 
 <br clear="both">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.2.2</a> on Thu May 21 2015 16:14:44 GMT-0700 (PDT)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.2.2</a> on Sat May 23 2015 04:43:55 GMT-0700 (PDT)
 </footer>
 
 <script> prettyPrint(); </script>
