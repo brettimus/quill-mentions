@@ -102,8 +102,7 @@ var extend = require("../utilities/extend"),
  * @prop {object[]} choices - A static array of possible choices. Ignored if `ajax` is truthy.
  * @prop {string} choiceTemplate - A string used as a template for possible choices.
  * @prop {string} containerClassName - The class attached to the mentions view container.
- * @prop {function} format - Function used by a Controller instance to munge data into expected form. 
- * @prop {boolean} includeTrigger - Whether to prepend triggerSymbol to the inserted mention. 
+ * @prop {Function} format - Function used by a Controller instance to munge data into expected form. 
  * @prop {RegExp} matcher - The regular expression used to trigger Controller#search
  * @prop {string} mentionClass - Prefixed with `ql-` for now because of how quill handles custom formats. The class given to inserted mention. 
  * @prop {string} noMatchMessage - A message to display 
@@ -116,10 +115,9 @@ var defaults = {
     ajax: false,
     choiceMax: 6,
     choices: [],
-    choiceTemplate: "<li data-display=\"{{choice}}\" data-mention=\"{{data}}\">{{choice}}</li>",
+    choiceTemplate: "<li data-mention=\"{{data}}\">{{choice}}</li>",
     containerClassName: "ql-mentions",
     format: identity,
-    includeTrigger: false,
     matcher: /@\w+$/i,
     mentionClass: "mention-item",
     noMatchMessage: "Ruh Roh Raggy!",
@@ -212,8 +210,6 @@ function handleEnter() {
         currIndex = this.selectedChoiceIndex,
         currNode;
 
-    console.log("handling enter");
-
     if (currIndex === -1) return;
     nodes = this.view.container.querySelectorAll("li");
     if (nodes.length === 0) return;
@@ -227,8 +223,7 @@ function handleEnter() {
  * @this {QuillMentions}
  */
 function handleEscape() {
-    this.view.hide();
-    this.isMentioning = false;
+    this.hide();
     // may need to set selection
     this.quill.focus();
 }
@@ -308,9 +303,7 @@ function QuillMentions(quill, options) {
         container = this.quill.addContainer(modOptions.containerClassName);
 
     this.triggerSymbol = modOptions.triggerSymbol;
-    this.includeTrigger = modOptions.includeTrigger;
     this.matcher = modOptions.matcher;
-    this.mentionClass = modOptions.mentionClass;
     this.isMentioning = false;
     this.currentMention = null;
 
@@ -326,7 +319,6 @@ function QuillMentions(quill, options) {
         .listenClick(container)
         .addFormat();
 
-    this._cachedRange = null;
 }
 
 /**
@@ -356,7 +348,7 @@ QuillMentions.prototype.setController = function(options) {
 
     var formatter,
         config = {
-            max: options.choiceMax,
+            max: options.choicesMax,
         };
     if (!options.ajax) {
         formatter = options.format;
@@ -387,7 +379,6 @@ QuillMentions.prototype.listenTextChange = function listenTextChange(quill) {
 
         if (mention) {
             _this = this;
-            this._cachedRange = quill.getSelection();
             this.isMentioning = true;
             this.currentMention = mention;
             query = mention[0].replace(this.triggerSymbol, "");
@@ -421,7 +412,7 @@ QuillMentions.prototype.listenSelectionChange = function(quill) {
     function selectionChangeHandler(range) {
         if (!range) {
             this.view.hide();
-            quill.setSelection(null); // this is unnecessary right?
+            quill.setSelection(null);
         }
     }
 };
@@ -442,6 +433,7 @@ QuillMentions.prototype.listenHotKeys = function(quill) {
     function keyboardHandler(event) {
         var code = event.keyCode || event.which;
         if (this.isMentioning || code === 13) { // need special logic for enter key :sob:
+            console.log("We are mentioning!");
             dispatch.call(this, code);
             event.stopPropagation();
             event.preventDefault();
@@ -451,7 +443,7 @@ QuillMentions.prototype.listenHotKeys = function(quill) {
     function dispatch(code) {
         var callback = KEYS[code];
         if (callback) {
-            quill.setSelection(this._cachedRange); // HACK oh noz! todo bad icky
+            quill.setSelection(this.range); // HACK oh noz! todo bad icky
             callback.call(this);
         }
     }
@@ -468,7 +460,6 @@ QuillMentions.prototype.listenClick = function(elt) {
     elt.addEventListener("touchend", addMention.bind(this));
     return this;
 
-    /** Wraps the QuillMentions~addMention method */
     function addMention(event) {
         var target = event.target || event.srcElement;
         if (target.tagName.toLowerCase() === "li") { // TODO - this is bad news... but adding a pointer-event: none; to the error message list item does not work bc i'm using bubbling to capture click events in the first place and oh my garsh is this a long comment...
@@ -498,17 +489,15 @@ QuillMentions.prototype.findMention = function findMention() {
  */
  QuillMentions.prototype.addMention = function addMention(node) {
      var insertAt = this.currentMention.index,
-         toInsert = (this.includeTrigger ? this.triggerSymbol : "") + node.dataset.display,
+         toInsert = "@"+node.innerText,
          toFocus = insertAt + toInsert.length + 1;
 
+     this.hide(); // sequencing?
 
      this.quill.deleteText(insertAt, insertAt + this.currentMention[0].length);
-     this.quill.insertText(insertAt, toInsert, "mention", this.mentionClass+"-"+node.dataset.mention);
+     this.quill.insertText(insertAt, toInsert, "mention", this.options.mentionClass+"-"+node.dataset.mention);
      this.quill.insertText(insertAt + toInsert.length, " ");
      this.quill.setSelection(toFocus, toFocus);
-
-     this.isMentioning = false;
-     this.view.hide(); // sequencing?
  };
 
 
@@ -531,7 +520,7 @@ QuillMentions.prototype.findMention = function findMention() {
  };
 
 
-},{"./controller":1,"./defaults/defaults":2,"./keyboard":4,"./utilities/extend":8,"./view":12}],6:[function(require,module,exports){
+},{"./controller":1,"./defaults/defaults":2,"./keyboard":4,"./utilities/extend":8,"./view":11}],6:[function(require,module,exports){
 /** @module utilities/ajax */
 module.exports = {
 
@@ -647,26 +636,8 @@ module.exports = {
     }
 };
 },{}],11:[function(require,module,exports){
-var escapeRegExp = require("./regexp").escapeRegExp;
-
-module.exports = {
-    all: replaceAll,
-};
-
-/**
- * @param {stirng} [options] - RegExp options (like "i"). Defaults to the empty string.
- **/
-function replaceAll(string, toReplace, replaceWith, options) {
-    options = options || "";
-    var reOpts = "g" + options,
-        re     = new RegExp(escapeRegExp(toReplace), reOpts);
-
-    return string.replace(re, replaceWith);
-}
-},{"./regexp":10}],12:[function(require,module,exports){
 var DOM = require("./utilities/dom"),
-    extend = require("./utilities/extend"),
-    replaceAll = require("./utilities/string-replace").all;
+    extend = require("./utilities/extend");
 
 module.exports = View;
 
@@ -696,7 +667,7 @@ View.prototype.render = function(data) {
         return this._renderError();
     }
 
-    items = data.map(this._renderLI, this).join("");
+    items = data.map(this._renderLI, this);
     toRender = this.templates.list.replace("{{choices}}", items);
     return this._renderSucess(toRender);
 };
@@ -729,10 +700,10 @@ View.prototype._renderError = function(error) {
  * @param {string} error - Message to paste into the popover (most likely html, but text works too!)
  */
 View.prototype._renderLI = function(datum) {
-    var result = this.templates.listItem;
-    result = replaceAll(result, "{{choice}}", datum.name); // TODO change .name property name
-    result = replaceAll(result, "{{data}}", datum.data);   // TODO change .data property name
-    return result;
+    return this.templates
+            .listItem
+            .replace("{{choice}}", datum.name) // rename
+            .replace("{{data}}", datum.data);
 };
 
 /**
@@ -845,4 +816,4 @@ View.prototype._nodeHeight = function(node) {
 function QuillEditorView() {
     throw new Error("NYI");
 }
-},{"./utilities/dom":7,"./utilities/extend":8,"./utilities/string-replace":11}]},{},[1,2,3,4,5,6,7,8,9,10,11,12]);
+},{"./utilities/dom":7,"./utilities/extend":8}]},{},[1,2,3,4,5,6,7,8,9,10,11]);

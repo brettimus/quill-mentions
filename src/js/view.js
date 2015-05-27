@@ -1,6 +1,5 @@
 var DOM = require("./utilities/dom"),
-    extend = require("./utilities/extend"),
-    replaceAll = require("./utilities/string-replace").all;
+    extend = require("./utilities/extend");
 
 module.exports = View;
 
@@ -30,7 +29,7 @@ View.prototype.render = function(data) {
         return this._renderError();
     }
 
-    items = data.map(this._renderLI, this).join("");
+    items = data.map(this._renderLI, this);
     toRender = this.templates.list.replace("{{choices}}", items);
     return this._renderSucess(toRender);
 };
@@ -63,10 +62,10 @@ View.prototype._renderError = function(error) {
  * @param {string} error - Message to paste into the popover (most likely html, but text works too!)
  */
 View.prototype._renderLI = function(datum) {
-    var result = this.templates.listItem;
-    result = replaceAll(result, "{{choice}}", datum.name); // TODO change .name property name
-    result = replaceAll(result, "{{data}}", datum.data);   // TODO change .data property name
-    return result;
+    return this.templates
+            .listItem
+            .replace("{{choice}}", datum.name) // rename
+            .replace("{{data}}", datum.data);
 };
 
 /**
