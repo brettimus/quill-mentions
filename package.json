@@ -1,7 +1,13 @@
 {
   "name": "quill-mentions",
-  "version": "0.0.1",
-  "description": "a module for integrating mentions into quill.js",
+  "version": "0.1.0",
+  "description": "a module for integrating at-style mentions into quill.js",
+  "keywords": [
+    "quill",
+    "mentions",
+    "supergoodcodeiswear",
+    "bugsgalorenojkbutseriously"
+  ],
   "main": "src/js/mentions.js",
   "directories": {
     "doc": "docs"
