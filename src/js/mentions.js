@@ -1,9 +1,12 @@
-var addFormat = require("./format"),
+var addController = require("./controller"),
+    addFormat = require("./format"),
     addSearch = require("./search"),
     addView = require("./view");
 
-var defaultFactory = require("./defaults/defaults");
+var defaultFactory = require("./defaults/defaults"),
+    KEYS = require("./keyboard");
 
+addController(QuillMentions);
 addFormat(QuillMentions);
 addSearch(QuillMentions);
 addView(QuillMentions);
@@ -28,6 +31,8 @@ function QuillMentions(quill, options) {
     this.currentChoices = null;
     this.currentMention = null;
 
+    this.selectedChoiceIndex = -1;
+
     this.hide();
     this.addFormat(); // adds custom format for mentions
     this.addListeners();
@@ -38,12 +43,15 @@ function QuillMentions(quill, options) {
  */
 QuillMentions.prototype.addListeners = function addListeners() {
     var textChangeHandler = this.textChangeHandler.bind(this),
-        addMentionHandler = this.addMentionHandler.bind(this);
+        addMentionHandler = this.addMentionHandler.bind(this),
+        keyboardHandler   = this.keyboardHandler.bind(this);
 
     this.quill.on(this.quill.constructor.events.TEXT_CHANGE, textChangeHandler);
 
     this.container.addEventListener('click', addMentionHandler, false);
     this.container.addEventListener('touchend', addMentionHandler, false);
+
+    this.quill.container.addEventListener('keyup', keyboardHandler, false); // TIL keypress is intended for keys that normally produce a character
 };
 
 /**
@@ -63,12 +71,43 @@ QuillMentions.prototype.textChangeHandler = function textChangeHandler(_delta) {
             that.show();
         });
     }
-    else if (this.container.style.left !== this.options.hideMargin) {
-        this.currentMention = null;
+    else if (this.isMentioning()) {
+        // this.currentMention = null; // DANGER HACK TODO NOOOO
         this.range = null;   // Prevent restoring selection to last saved
         this.hide();
     }
 };
+
+/**
+ *
+ */
+QuillMentions.prototype.keyboardHandler = function(e) {
+    var code = e.keyCode || e.which;
+    if (this.isMentioning() || code === 13) { // need special logic for enter key :sob:
+        console.log("We are mentioning!");
+        this._dispatchKeycode(code);
+        e.stopPropagation();
+        e.preventDefault();
+    }
+};
+
+QuillMentions.prototype._dispatchKeycode = function(code) {
+    var callback = KEYS[code];
+    if (callback) {
+        this.quill.setSelection(this.range); // HACK oh noz!
+        callback.call(this);
+    }
+};
+
+
+/**
+ * @method
+ */
+QuillMentions.prototype.hasSelection = function() {
+    return this.selectedChoiceIndex !== -1;
+};
+
+
 
 /**
  * @method
@@ -85,36 +124,40 @@ QuillMentions.prototype.findMention = function findMention() {
     return match;
 };
 
-/**
- * @method
- */
-QuillMentions.prototype.renderCurrentChoices = function renderCurrentChoices() {
-    if (this.currentChoices && this.currentChoices.length) {
-        var choices = this.currentChoices.map(function(choice) {
-            return this.options.choiceTemplate.replace("{{choice}}", choice.name).replace("{{data}}", choice.data);
-        }, this).join("");
-        this.container.innerHTML = this.options.template.replace("{{choices}}", choices);
-    }
-    else {
-        // render helpful message about nothing matching so far...
-        this.container.innerHTML = this.options.template.replace("{{choices}}", "<li><i>Womp womp...</i></li>");
-    }
-};
+
 
 /**
  * @method
  */
 QuillMentions.prototype.addMentionHandler = function addMentionHandler(e) {
-    console.log("Current selection when a choice is clicked: ", this.range);
-    var target = e.target || e.srcElement,
-        insertAt = this.currentMention.index,
-        toInsert = "@"+target.innerText,
-        toFocus = insertAt + toInsert.length + 1;
-    this.quill.deleteText(insertAt, insertAt + this.currentMention[0].length);
-    this.quill.insertText(insertAt, toInsert, "mention", this.options.mentionClass);
-    this.quill.insertText(insertAt + toInsert.length, " ");
-    this.quill.setSelection(toFocus, toFocus);
-    this.hide();
+    var target = e.target || e.srcElement;
+    if (target.tagName === "li") { // TODO - this is bad news... but adding a pointer-event: none; does not work bc i'm using bubbling...
+        console.log(target);
+        this.addMention(target);
+    }
     e.stopPropagation();
+};
+
+/**
+ * @method
+ */
+ QuillMentions.prototype.addMention = function addMention(node) {
+     var insertAt = this.currentMention.index,
+         toInsert = "@"+node.innerText,
+         toFocus = insertAt + toInsert.length + 1;
+
+     this.hide(); // sequencing?
+
+     this.quill.deleteText(insertAt, insertAt + this.currentMention[0].length);
+     this.quill.insertText(insertAt, toInsert, "mention", this.options.mentionClass+"-"+node.dataset.mention);
+     this.quill.insertText(insertAt + toInsert.length, " ");
+     this.quill.setSelection(toFocus, toFocus);
+ };
+
+/**
+ * @method
+ */
+QuillMentions.prototype.isMentioning = function() {
+    return this.container.className.search(/ql\-is\-mentioning/) !== -1;
 };
 

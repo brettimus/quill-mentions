@@ -1,4 +1,75 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+module.exports = function addController(QuillMentions) {
+
+    /**
+     * TODO - this should simply pass data to the view and let it sort shit out.
+     * @method
+     */
+    QuillMentions.prototype.renderCurrentChoices = function renderCurrentChoices() {
+        var noMatchFoundMessage;
+        if (this.hasChoices()) {
+            this.render(this._getChoicesHTML());
+        }
+        else {
+            // render helpful message about nothing matching so far...
+            noMatchFoundMessage = this.noMatchHTML;
+            console.log(noMatchFoundMessage);
+            if (noMatchFoundMessage) {
+                this.render(noMatchFoundMessage);
+            } else {
+                this.hide();
+            }
+        }
+    };
+
+    /**
+     * Adds markup to template and puts it inside the container.
+     * @method
+     * @private
+     */
+    QuillMentions.prototype.render = function(choices) {
+        var template = this.options.template,
+            result   = template.replace("{{choices}}", choices);
+
+        this.container.innerHTML = result;
+    };
+
+    /**
+     * Maps the current array of possible choices to one long string of HTML.
+     * @method
+     * @private
+     */
+    QuillMentions.prototype._getChoicesHTML = function() {
+        return this
+                .currentChoices
+                .map(this._renderChoice, this)
+                .join("");
+    };
+
+    /**
+     * Replaces the {{choice}} and {{data}} fields in a template.
+     * @method
+     * @private
+     */
+    QuillMentions.prototype._renderChoice = function(choice) {
+        var template = this.options.choiceTemplate,
+            result;
+        result = template
+                    .replace("{{choice}}", choice.name)
+                    .replace("{{data}}", choice.data);
+        return result;
+    };
+
+    /**
+     * Returns whether or not there are any choices to display.
+     * @method
+     * @private
+     */
+    QuillMentions.prototype.hasChoices = function() {
+        return this.currentChoices && this.currentChoices.length;
+    };
+};
+},{}],2:[function(require,module,exports){
 /**
  * @module defaults/defaults
  */
@@ -8,35 +79,37 @@ var extend = require("../utilities/extend"),
 
 /**
  * @namespace
- * @property {object} ajax - The default ajax configuration.
- * @property {number} choiceMax - The maximum number of possible matches to display.
- * @property {object[]} choices - A static array of possible choices. Ignored if `ajax` is truthy.
- * @property {string} choiceTemplate - A string used as a template for possible choices.
- * @property {string} containerClassName - The class attached to the mentions view container.
- * @property {string} hideMargin - The margin used to hide the popover.
- * @property {regexp} matcher - The regular expression used to trigger Mentions#search
- * @property {string} mentionClass - The class given to inserted mention. Prefixed with `ql-` for now.
- * @property {number} offset - I forogt where this is even used. Probably has to do with calculating position of popover.
- * @property {string} template - A template for the popover, into which possible choices are inserted. 
+ * @prop {object} ajax - The default ajax configuration.
+ * @prop {number} choiceMax - The maximum number of possible matches to display.
+ * @prop {object[]} choices - A static array of possible choices. Ignored if `ajax` is truthy.
+ * @prop {string} choiceTemplate - A string used as a template for possible choices.
+ * @prop {string} containerClassName - The class attached to the mentions view container.
+ * @prop {regexp} matcher - The regular expression used to trigger Mentions#search
+ * @prop {string} mentionClass - Prefixed with `ql-` for now because of how quill handles custom formats. The class given to inserted mention. 
+ * @prop {string} noMatchMessage - A message to display 
+ * @prop {number} offset - I forogt where this is even used. Probably has to do with calculating position of popover.
+ * @prop {string} template - A template for the popover, into which possible choices are inserted. 
  */
 var defaults = {
     ajax: false,
-    choiceMax: 10,
+    choiceMax: 6,
     choices: [],
-    choiceTemplate: "<li>{{choice}}</li>",
+    choiceTemplate: "<li data-mention=\"{{data}}\">{{choice}}</li>",
     containerClassName: "ql-mentions",
     hideMargin: '-10000px',
     matcher: /@\w+$/i,
     mentionClass: "mention-item",
+    noMatchMessage: "Ruh Roh Raggy!",
+    noMatchTemplate: "<li class='ql-mention-choice-no-match'><i>{{message}}</i></li>",
     offset: 10,
     template: '<ul>{{choices}}</ul>',
 };
 
 /**
  * @namespace
- * @property {function} format - Mapped onto the array of possible matches returned by call to `path`. Should yield the expected interface for data, which is an object with a `name` property.
- * @property {string} path - The path to endpoint we should query for possible matches.
- * @property {string} queryParameter - The name of the query paramater in the url sent to `path`.
+ * @prop {function} format - Mapped onto the array of possible matches returned by call to `path`. Should yield the expected interface for data, which is an object with `name` and `data` properties.
+ * @prop {string} path - The path to endpoint we should query for possible matches.
+ * @prop {string} queryParameter - The name of the query paramater in the url sent to `path`.
  */
 var ajaxDefaults = {
     format: identity,
@@ -56,7 +129,7 @@ function defaultFactory(options) {
 }
 
 module.exports = defaultFactory;
-},{"../utilities/extend":7,"../utilities/identity":8}],2:[function(require,module,exports){
+},{"../utilities/extend":10,"../utilities/identity":11}],3:[function(require,module,exports){
 module.exports = addFormat;
 
 function addFormat(QuillMentions) {
@@ -67,17 +140,130 @@ function addFormat(QuillMentions) {
         this.quill.addFormat('mention', { tag: 'SPAN', "class": "ql-", });
     };
 }
-},{}],3:[function(require,module,exports){
+},{}],4:[function(require,module,exports){
 (function (global){
 global.QuillMentions = require("./mentions");
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./mentions":4}],4:[function(require,module,exports){
-var addFormat = require("./format"),
+},{"./mentions":6}],5:[function(require,module,exports){
+var DOM = require("./utilities/dom"),
+    addClass = DOM.addClass,
+    removeClass = DOM.removeClass;
+
+var SELECTED_CLASS = "ql-mention-choice-selected";
+
+/**
+ * Dispatches keyboard events to handlers
+ * @namespace
+ * @prop {function} 
+ */
+var KEYS = {
+    13: handleEnter,
+    27: handleEscape,
+    38: handleUpKey,
+    40: handleDownKey,
+};
+
+/**
+ * @method
+ * @this {QuillMentions}
+ */
+function handleDownKey() {
+    _moveSelection.call(this, 1);
+}
+
+/**
+ * @method
+ * @this {QuillMentions}
+ */
+function handleUpKey() {
+    _moveSelection.call(this, -1);
+}
+
+
+
+/**
+ * @method
+ * @this {QuillMentions}
+ */
+function handleEnter() {
+    var nodes,
+        currIndex = this.selectedChoiceIndex,
+        currNode;
+
+    if (currIndex === -1) return;
+    nodes = this.container.querySelectorAll("li");
+    if (nodes.length === 0) return;
+    currNode = nodes[currIndex];
+    this.addMention(currNode);
+    this.selectedChoiceIndex = -1;
+}
+
+/**
+ * @method
+ * @this {QuillMentions}
+ */
+function handleEscape() {
+    this.hide();
+    // may need to set selection
+    this.quill.focus();
+}
+
+/**
+ * Moves the selected list item up or down. (+steps means down, -steps means up)
+ * @method
+ * @private
+ * @this {QuillMentions}
+ */
+function _moveSelection(steps) {
+    var nodes,
+        currIndex = this.selectedChoiceIndex,
+        currNode,
+        nextIndex,
+        nextNode;
+
+    nodes = this.container.querySelectorAll("li");
+
+    if (nodes.length === 0) {
+        this.selectedChoiceIndex = -1;
+        return;
+    }
+    if (currIndex !== -1) {
+        currNode = nodes[currIndex];
+        removeClass(currNode, SELECTED_CLASS);
+    }
+
+    nextIndex = _normalizeIndex(currIndex + steps, nodes.length);
+    nextNode = nodes[nextIndex];
+
+    if (nextNode) {
+        addClass(nextNode, SELECTED_CLASS);
+        this.selectedChoiceIndex = nextIndex;
+    }
+    else {
+        console.log("Indexing error on node returned by querySelectorAll");
+    }
+
+}
+
+function _normalizeIndex(i, modulo) {
+    if (modulo <= 0) throw new Error("WTF are you doing? _normalizeIndex needs a nonnegative, nonzero modulo.");
+    while (i < 0) {
+        i += modulo;
+    }
+    return i % modulo;
+}
+
+module.exports = KEYS;
+},{"./utilities/dom":9}],6:[function(require,module,exports){
+var addController = require("./controller"),
+    addFormat = require("./format"),
     addSearch = require("./search"),
     addView = require("./view");
 
-var defaultFactory = require("./defaults/defaults");
+var defaultFactory = require("./defaults/defaults"),
+    KEYS = require("./keyboard");
 
+addController(QuillMentions);
 addFormat(QuillMentions);
 addSearch(QuillMentions);
 addView(QuillMentions);
@@ -102,6 +288,8 @@ function QuillMentions(quill, options) {
     this.currentChoices = null;
     this.currentMention = null;
 
+    this.selectedChoiceIndex = -1;
+
     this.hide();
     this.addFormat(); // adds custom format for mentions
     this.addListeners();
@@ -112,12 +300,15 @@ function QuillMentions(quill, options) {
  */
 QuillMentions.prototype.addListeners = function addListeners() {
     var textChangeHandler = this.textChangeHandler.bind(this),
-        addMentionHandler = this.addMentionHandler.bind(this);
+        addMentionHandler = this.addMentionHandler.bind(this),
+        keyboardHandler   = this.keyboardHandler.bind(this);
 
     this.quill.on(this.quill.constructor.events.TEXT_CHANGE, textChangeHandler);
 
     this.container.addEventListener('click', addMentionHandler, false);
     this.container.addEventListener('touchend', addMentionHandler, false);
+
+    this.quill.container.addEventListener('keyup', keyboardHandler, false); // TIL keypress is intended for keys that normally produce a character
 };
 
 /**
@@ -137,12 +328,43 @@ QuillMentions.prototype.textChangeHandler = function textChangeHandler(_delta) {
             that.show();
         });
     }
-    else if (this.container.style.left !== this.options.hideMargin) {
-        this.currentMention = null;
+    else if (this.isMentioning()) {
+        // this.currentMention = null; // DANGER HACK TODO NOOOO
         this.range = null;   // Prevent restoring selection to last saved
         this.hide();
     }
 };
+
+/**
+ *
+ */
+QuillMentions.prototype.keyboardHandler = function(e) {
+    var code = e.keyCode || e.which;
+    if (this.isMentioning() || code === 13) { // need special logic for enter key :sob:
+        console.log("We are mentioning!");
+        this._dispatchKeycode(code);
+        e.stopPropagation();
+        e.preventDefault();
+    }
+};
+
+QuillMentions.prototype._dispatchKeycode = function(code) {
+    var callback = KEYS[code];
+    if (callback) {
+        this.quill.setSelection(this.range); // HACK oh noz!
+        callback.call(this);
+    }
+};
+
+
+/**
+ * @method
+ */
+QuillMentions.prototype.hasSelection = function() {
+    return this.selectedChoiceIndex !== -1;
+};
+
+
 
 /**
  * @method
@@ -159,41 +381,46 @@ QuillMentions.prototype.findMention = function findMention() {
     return match;
 };
 
-/**
- * @method
- */
-QuillMentions.prototype.renderCurrentChoices = function renderCurrentChoices() {
-    if (this.currentChoices && this.currentChoices.length) {
-        var choices = this.currentChoices.map(function(choice) {
-            return this.options.choiceTemplate.replace("{{choice}}", choice.name).replace("{{data}}", choice.data);
-        }, this).join("");
-        this.container.innerHTML = this.options.template.replace("{{choices}}", choices);
-    }
-    else {
-        // render helpful message about nothing matching so far...
-        this.container.innerHTML = this.options.template.replace("{{choices}}", "<li><i>Womp womp...</i></li>");
-    }
-};
+
 
 /**
  * @method
  */
 QuillMentions.prototype.addMentionHandler = function addMentionHandler(e) {
-    console.log("Current selection when a choice is clicked: ", this.range);
-    var target = e.target || e.srcElement,
-        insertAt = this.currentMention.index,
-        toInsert = "@"+target.innerText,
-        toFocus = insertAt + toInsert.length + 1;
-    this.quill.deleteText(insertAt, insertAt + this.currentMention[0].length);
-    this.quill.insertText(insertAt, toInsert, "mention", this.options.mentionClass);
-    this.quill.insertText(insertAt + toInsert.length, " ");
-    this.quill.setSelection(toFocus, toFocus);
-    this.hide();
+    var target = e.target || e.srcElement;
+    if (target.tagName === "li") { // TODO - this is bad news... but adding a pointer-event: none; does not work bc i'm using bubbling...
+        console.log(target);
+        this.addMention(target);
+    }
     e.stopPropagation();
 };
 
+/**
+ * @method
+ */
+ QuillMentions.prototype.addMention = function addMention(node) {
+     var insertAt = this.currentMention.index,
+         toInsert = "@"+node.innerText,
+         toFocus = insertAt + toInsert.length + 1;
 
-},{"./defaults/defaults":1,"./format":2,"./search":5,"./view":9}],5:[function(require,module,exports){
+     this.hide(); // sequencing?
+
+     this.quill.deleteText(insertAt, insertAt + this.currentMention[0].length);
+     this.quill.insertText(insertAt, toInsert, "mention", this.options.mentionClass+"-"+node.dataset.mention);
+     this.quill.insertText(insertAt + toInsert.length, " ");
+     this.quill.setSelection(toFocus, toFocus);
+ };
+
+/**
+ * @method
+ */
+QuillMentions.prototype.isMentioning = function() {
+    return this.container.className.search(/ql\-is\-mentioning/) !== -1;
+};
+
+
+},{"./controller":1,"./defaults/defaults":2,"./format":3,"./keyboard":5,"./search":7,"./view":12}],7:[function(require,module,exports){
+// TODO - rename to "model"
 var loadJSON = require("./utilities/ajax").loadJSON;
 /**
  * @callback searchCallback
@@ -266,7 +493,7 @@ function ajaxError(error) {
 function noCallbackError(functionName) {
     console.log("Warning!", functionName, "was not provided a callback. Don't be a ding-dong.");
 }
-},{"./utilities/ajax":6}],6:[function(require,module,exports){
+},{"./utilities/ajax":8}],8:[function(require,module,exports){
 /** @module utilities/ajax */
 module.exports = {
 
@@ -294,7 +521,41 @@ module.exports = {
         return xhr;
     },
 };
-},{}],7:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
+module.exports.addClass = addClass;
+module.exports.removeClass = removeClass;
+module.exports.getOlderSiblingsInclusive = getOlderSiblingsInclusive;
+
+function addClass(node, className) {
+    if (!node) return;
+    if (!node.className) node.className = className;
+    else if (node.className.indexOf(className) === -1) {
+        node.className += " "+className;
+    }
+}
+
+function removeClass(node, className) {
+    if (!node) return;
+    while (node.className.indexOf(className) !== -1) {
+        node.className = node.className.replace(className, "");
+    }
+}
+
+function getOlderSiblingsInclusive(node) {
+    var result = [node];
+    if (!node) return [];
+    while (node.previousSibling) {
+        result.push(node.previousSibling);
+        node = node.previousSibling;
+    }
+    return result;
+}
+
+// helper
+function escapeRegExp(str) {
+  return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
+}
+},{}],10:[function(require,module,exports){
 /**
  * Extend module
  * @module utilities/extend
@@ -333,7 +594,7 @@ function extendHelper(destination, source) {
     }
     return destination;
 }
-},{}],8:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 /** @module utilities/identity */
 
 module.exports = identity;
@@ -342,53 +603,21 @@ module.exports = identity;
 function identity(d) {
     return d;
 }
-},{}],9:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
+var DOM = require("./utilities/dom"),
+    addClass = DOM.addClass,
+    removeClass = DOM.removeClass,
+    getOlderSiblingsInclusive = DOM.getOlderSiblingsInclusive;
+
 module.exports = function addView(QuillMentions) {
 
-    /**
-     * @method
-     * @param {Object} reference
-     * @return {number[]}
-     */
-    QuillMentions.prototype.position = function position(reference) {
-        var referenceBounds,
-            parentBounds,
-            offsetLeft,
-            offsetTop,
-            offsetBottom,
-            left,
-            top;
-
-        if (reference) {
-            // Place tooltip under reference centered
-            // reference might be selection range so must use getBoundingClientRect()
-            referenceBounds = reference.getBoundingClientRect();
-            parentBounds = this.quill.container.getBoundingClientRect();
-            offsetLeft = referenceBounds.left - parentBounds.left;
-            offsetTop = referenceBounds.top - parentBounds.top;
-            offsetBottom = referenceBounds.bottom - parentBounds.bottom;
-            left = offsetLeft + referenceBounds.width/2 - this.container.offsetWidth/2;
-            top = offsetTop + referenceBounds.height + this.options.offset;
-            if (top + this.container.offsetHeight > this.quill.container.offsetHeight) {
-                top = offsetTop - this.container.offsetHeight - this.options.offset;
-            }
-            left = Math.max(0, Math.min(left, this.quill.container.offsetWidth - this.container.offsetWidth));
-            top = Math.max(0, Math.min(top, this.quill.container.offsetHeight - this.container.offsetHeight));
-
-        }
-        else {
-            // Place tooltip in middle of editor viewport
-            left = this.quill.container.offsetWidth/2 - this.container.offsetWidth/2;
-            top = this.quill.container.offsetHeight/2 - this.container.offsetHeight/2;
-        }
-        return [left, top];
-    };
 
     /**
      * @method
      */
     QuillMentions.prototype.hide = function hide() {
-        this.container.style.left = this.options.hideMargin;
+        removeClass(this.container, "ql-is-mentioning");
+        this.container.style.marginTop = "0";
         if (this.range) this.quill.setSelection(this.range);
         this.range = null;
     };
@@ -398,24 +627,36 @@ module.exports = function addView(QuillMentions) {
      * @param {Object} reference
      */
     QuillMentions.prototype.show = function show(reference) {
-        this.range = this.quill.getSelection();
-        reference = reference || this._findMentionNode(this.range);
-        console.log(reference);
-        var position,
-            left,
-            top;
 
-        position = this.position(reference);
-        left = position[0];
-        top = position[1];
-        this.container.style.left = left+"px";
-        this.container.style.top  = top+"px";
-        this.container.focus();
+        var qlContainer = this.quill.container,
+            qlEditor = this.quill.editor.root,
+            qlLines,
+            paddingTop = 10,
+            negMargin = -paddingTop;
+
+
+        this.range = this.quill.getSelection();
+        qlLines = this._findOffsetLines(this.range);
+
+        negMargin += qlEditor.getBoundingClientRect().height;
+        negMargin -= qlLines.reduce(function(total, line) {
+            return total + line.getBoundingClientRect().height;
+        }, 0);
+
+        this.container.style.marginTop = "-"+negMargin+'px';
+        addClass(this.container, "ql-is-mentioning");
+
+        // add keyboard listeners?
+        // or have keyboard listeners filter action based on "ql-is-mentioning";
+
+        this.container.focus(); // has no effect...
     };
 
+
     /**
+     * Return the DOM node that encloses the line on which current mention is being typed.
      * @method
-     * @access private
+     * @private
      * @param {Range} range
      * @return {Node|null}
      */
@@ -426,16 +667,44 @@ module.exports = function addView(QuillMentions) {
             node;
 
         leafAndOffset = this.quill.editor.doc.findLeafAt(range.start, true);
-        console.log("leafAndOffset", leafAndOffset);
         leaf = leafAndOffset[0];
-        offset = leafAndOffset[1];
+        offset = leafAndOffset[1]; // how many chars in front of current range
         if (leaf) node = leaf.node;
         while (node) {
-            console.log("Finding mention node. Looping up...", node);
-            if (node.tagName === "DIV") return node;
+            if (node.tagName === "DIV") break;
             node = node.parentNode;
         }
-        return null;
+        if (!node) return null;
+        return node;
     };
+
+    /**
+     * Return an array of dom nodes corresponding to all lines at or before the line corresponding to the current range.
+     * @method
+     * @private
+     * @param {Range} range
+     * @return {Node[]}
+     */
+    QuillMentions.prototype._findOffsetLines = function(range) {
+        var node = this._findMentionNode(range);
+        return getOlderSiblingsInclusive(node);
+    };
+
+
+    /**
+     * Render and return the "no matches found" template string
+     * @getter
+     * @private
+     * @return {string}
+     */
+    Object.defineProperty(QuillMentions.prototype, "noMatchHTML", {
+        get: function() {
+            var template = this.options.noMatchTemplate,
+                message = this.options.noMatchMessage;
+
+            return message ? template.replace("{{message}}", message) : null;
+        }
+    });
+
 };
-},{}]},{},[1,2,3,4,5,6,7,8,9]);
+},{"./utilities/dom":9}]},{},[1,2,3,4,5,6,7,8,9,10,11,12]);

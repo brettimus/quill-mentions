@@ -1,3 +1,4 @@
+// TODO - rename to "model"
 var loadJSON = require("./utilities/ajax").loadJSON;
 /**
  * @callback searchCallback
