@@ -117,8 +117,10 @@ QuillMentions.prototype.listenTextChange = function listenTextChange(quill) {
             });
         }
         else {
-            this.isMentioning = false;
+            // this.isMentioning = false; // this was causing ISSUES
             this.view.hide();
+
+
             //
             // NB - i dont' know what these do but i'm keeping them in here in case shit goes awry
             // this.currentMention = null; // DANGER HACK TODO NOOOO
@@ -171,7 +173,9 @@ QuillMentions.prototype.listenHotKeys = function(quill) {
     function dispatch(code) {
         var callback = KEYS[code];
         if (callback) {
-            quill.setSelection(this._cachedRange); // HACK oh noz! todo bad icky
+            if (code !== 13) { // HACK - ughhhh
+                // quill.setSelection(this._cachedRange); // another HACK oh noz! todo bad icky
+            }
             callback.call(this);
         }
     }

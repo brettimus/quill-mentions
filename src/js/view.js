@@ -86,12 +86,12 @@ View.prototype.hide = function hide(quill, range) {
 };
 
 /**
- * Returns whether the popover has disappeared. This method could probably live elsewhere? Maybe? Or serve a more narrow purpose.
+ * Returns whether the popover is in view. I had bad feels about this method but it's coming in hand re: keyboard events right now.
  * @method
  * @returns {boolean}
  */
 View.prototype.isHidden = function isHidden() {
-    return DOM.hasClass(this.container, "ql-is-mentioning");
+    return !DOM.hasClass(this.container, "ql-is-mentioning");
 };
 
 /**

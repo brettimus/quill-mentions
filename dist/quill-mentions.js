@@ -196,6 +196,8 @@ var KEYS = {
  * @this {QuillMentions}
  */
 function handleDownKey() {
+    if (this.view.isHidden()) return;
+    this.quill.setSelection(this._cachedRange); // another HACK oh noz! todo bad icky
     _moveSelection.call(this, 1);
 }
 
@@ -204,6 +206,8 @@ function handleDownKey() {
  * @this {QuillMentions}
  */
 function handleUpKey() {
+    if (this.view.isHidden()) return;
+    this.quill.setSelection(this._cachedRange); // another HACK oh noz! todo bad icky
     _moveSelection.call(this, -1);
 }
 
@@ -214,12 +218,15 @@ function handleUpKey() {
  * @this {QuillMentions}
  */
 function handleEnter() {
+    if (!this.isMentioning) {
+        this.selectedChoiceIndex = -1;
+        console.log("grrrr");
+    }
     var nodes,
         currIndex = this.selectedChoiceIndex,
         currNode;
 
     console.log("handling enter");
-
     if (currIndex === -1) return;
     nodes = this.view.container.querySelectorAll("li");
     if (nodes.length === 0) return;
@@ -235,7 +242,7 @@ function handleEnter() {
 function handleEscape() {
     this.view.hide();
     this.isMentioning = false;
-    // may need to set selection
+    this.selectedChoiceIndex = -1;
     this.quill.focus();
 }
 
@@ -405,8 +412,10 @@ QuillMentions.prototype.listenTextChange = function listenTextChange(quill) {
             });
         }
         else {
-            this.isMentioning = false;
+            // this.isMentioning = false; // this was causing ISSUES
             this.view.hide();
+
+
             //
             // NB - i dont' know what these do but i'm keeping them in here in case shit goes awry
             // this.currentMention = null; // DANGER HACK TODO NOOOO
@@ -459,7 +468,9 @@ QuillMentions.prototype.listenHotKeys = function(quill) {
     function dispatch(code) {
         var callback = KEYS[code];
         if (callback) {
-            quill.setSelection(this._cachedRange); // HACK oh noz! todo bad icky
+            if (code !== 13) { // HACK - ughhhh
+                // quill.setSelection(this._cachedRange); // another HACK oh noz! todo bad icky
+            }
             callback.call(this);
         }
     }
@@ -761,12 +772,12 @@ View.prototype.hide = function hide(quill, range) {
 };
 
 /**
- * Returns whether the popover has disappeared. This method could probably live elsewhere? Maybe? Or serve a more narrow purpose.
+ * Returns whether the popover is in view. I had bad feels about this method but it's coming in hand re: keyboard events right now.
  * @method
  * @returns {boolean}
  */
 View.prototype.isHidden = function isHidden() {
-    return DOM.hasClass(this.container, "ql-is-mentioning");
+    return !DOM.hasClass(this.container, "ql-is-mentioning");
 };
 
 /**

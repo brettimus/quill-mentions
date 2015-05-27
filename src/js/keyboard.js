@@ -30,6 +30,8 @@ var KEYS = {
  * @this {QuillMentions}
  */
 function handleDownKey() {
+    if (this.view.isHidden()) return;
+    this.quill.setSelection(this._cachedRange); // another HACK oh noz! todo bad icky
     _moveSelection.call(this, 1);
 }
 
@@ -38,6 +40,8 @@ function handleDownKey() {
  * @this {QuillMentions}
  */
 function handleUpKey() {
+    if (this.view.isHidden()) return;
+    this.quill.setSelection(this._cachedRange); // another HACK oh noz! todo bad icky
     _moveSelection.call(this, -1);
 }
 
@@ -48,12 +52,15 @@ function handleUpKey() {
  * @this {QuillMentions}
  */
 function handleEnter() {
+    if (!this.isMentioning) {
+        this.selectedChoiceIndex = -1;
+        console.log("grrrr");
+    }
     var nodes,
         currIndex = this.selectedChoiceIndex,
         currNode;
 
     console.log("handling enter");
-
     if (currIndex === -1) return;
     nodes = this.view.container.querySelectorAll("li");
     if (nodes.length === 0) return;
@@ -69,6 +76,7 @@ function handleEnter() {
 function handleEscape() {
     this.view.hide();
     this.isMentioning = false;
+    this.selectedChoiceIndex = -1;
     this.quill.focus();
 }
 
