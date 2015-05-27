@@ -1,11 +1,19 @@
 module.exports.addClass = addClass;
-module.exports.getOlderSiblingsInclusive = getOlderSiblingsInclusive;
-module.exports.hasClass = addClass;
 module.exports.removeClass = removeClass;
+module.exports.getOlderSiblingsInclusive = getOlderSiblingsInclusive;
 
 function addClass(node, className) {
-    if (!hasClass(node, className)) {
+    if (!node) return;
+    if (!node.className) node.className = className;
+    else if (node.className.indexOf(className) === -1) {
         node.className += " "+className;
+    }
+}
+
+function removeClass(node, className) {
+    if (!node) return;
+    while (node.className.indexOf(className) !== -1) {
+        node.className = node.className.replace(className, "");
     }
 }
 
@@ -19,14 +27,7 @@ function getOlderSiblingsInclusive(node) {
     return result;
 }
 
-function hasClass(node, className) {
-    if (!node) return;
-    return node.className.indexOf(className) !== -1;
-}
-
-function removeClass(node, className) {
-    if (!hasClass(node, className)) return;
-    while (node.className.indexOf(className) !== -1) {
-        node.className = node.className.replace(className, "");
-    }
+// helper
+function escapeRegExp(str) {
+  return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
 }
