@@ -92,7 +92,7 @@ var defaults = {
     matcher: /@\w+$/i,
     mentionClass: "mention-item",
     noMatchMessage: "Ruh roh raggy!",
-    noMatchTemplate: "<li class='no-match'><i>{{message}}</i></li>",
+    noMatchTemplate: "<li class='ql-mention-item-no-match'><i>{{message}}</i></li>",
     offset: 10,
     template: '<ul>{{choices}}</ul>',
 };
@@ -121,7 +121,7 @@ function defaultFactory(options) {
 }
 
 module.exports = defaultFactory;
-},{"../utilities/extend":9,"../utilities/identity":10}],3:[function(require,module,exports){
+},{"../utilities/extend":10,"../utilities/identity":11}],3:[function(require,module,exports){
 module.exports = addFormat;
 
 function addFormat(QuillMentions) {
@@ -136,13 +136,115 @@ function addFormat(QuillMentions) {
 (function (global){
 global.QuillMentions = require("./mentions");
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./mentions":5}],5:[function(require,module,exports){
+},{"./mentions":6}],5:[function(require,module,exports){
+var DOM = require("./utilities/dom"),
+    addClass = DOM.addClass,
+    removeClass = DOM.removeClass;
+
+var SELECTED_CLASS = "ql-mention-item-selected";
+
+/**
+ * Dispatches keyboard events to handlers
+ * @namespace
+ * @prop {function} 
+ */
+var KEYS = {
+    13: handleEnter,
+    27: handleEscape,
+    38: handleUpKey,
+    40: handleDownKey,
+};
+
+/**
+ * @method
+ * @this {QuillMentions}
+ */
+function handleDownKey() {
+    _moveSelection.call(this, 1);
+}
+
+/**
+ * @method
+ * @this {QuillMentions}
+ */
+function handleUpKey() {
+    _moveSelection.call(this, -1);
+}
+
+
+
+/**
+ * @method
+ * @this {QuillMentions}
+ */
+function handleEnter() {
+
+}
+
+/**
+ * @method
+ * @this {QuillMentions}
+ */
+function handleEscape() {
+    this.hide();
+    // may need to set selection
+    this.quill.focus();
+}
+
+/**
+ * Moves the selected list item up or down. (+steps means down, -steps means up)
+ * @method
+ * @private
+ * @this {QuillMentions}
+ */
+function _moveSelection(steps) {
+    var nodes,
+        currIndex = this.selectedChoiceIndex,
+        currNode,
+        nextIndex,
+        nextNode;
+
+    nodes = this.container.querySelectorAll("li");
+
+    if (nodes.length === 0) {
+        this.selectedChoiceIndex = -1;
+        return;
+    }
+    if (currIndex !== -1) {
+        currNode = nodes[currIndex];
+        removeClass(currNode, SELECTED_CLASS);
+    }
+
+    nextIndex = _normalizeIndex(currIndex + steps, nodes.length);
+    nextNode = nodes[nextIndex];
+
+    if (nextNode) {
+        addClass(nextNode, SELECTED_CLASS);
+        this.selectedChoiceIndex = nextIndex;
+    }
+    else {
+        console.log("Indexing error on node returned by querySelectorAll");
+    }
+
+}
+
+function _normalizeIndex(i, modulo) {
+    if (modulo <= 0) throw new Error("WTF are you doing? _normalizeIndex needs a nonnegative, nonzero modulo.");
+    while (i < 0) {
+        i += modulo;
+    }
+    return i % modulo;
+}
+
+module.exports = KEYS;
+},{"./utilities/dom":9}],6:[function(require,module,exports){
 var addController = require("./controller"),
     addFormat = require("./format"),
     addSearch = require("./search"),
     addView = require("./view");
 
-var defaultFactory = require("./defaults/defaults");
+var defaultFactory = require("./defaults/defaults"),
+    KEYS = require("./keyboard");
 
 addController(QuillMentions);
 addFormat(QuillMentions);
@@ -169,31 +271,11 @@ function QuillMentions(quill, options) {
     this.currentChoices = null;
     this.currentMention = null;
 
+    this.selectedChoiceIndex = -1;
+
     this.hide();
     this.addFormat(); // adds custom format for mentions
     this.addListeners();
-
-    // TODO - (re)move this. just putting it here as a reminder...
-    this.hotKeys = {
-        38: [
-            { // up arrow
-                callback: function() {
-    
-                },
-                key: 38,
-                metaKey: false,
-            },
-            ],
-        40: [
-            { // down arrow
-                callback: function() {
-    
-                },
-                key: 40,
-                metaKey: false,
-            },
-            ],
-    };
 }
 
 /**
@@ -201,12 +283,15 @@ function QuillMentions(quill, options) {
  */
 QuillMentions.prototype.addListeners = function addListeners() {
     var textChangeHandler = this.textChangeHandler.bind(this),
-        addMentionHandler = this.addMentionHandler.bind(this);
+        addMentionHandler = this.addMentionHandler.bind(this),
+        keyboardHandler   = this.keyboardHandler.bind(this);
 
     this.quill.on(this.quill.constructor.events.TEXT_CHANGE, textChangeHandler);
 
     this.container.addEventListener('click', addMentionHandler, false);
     this.container.addEventListener('touchend', addMentionHandler, false);
+
+    this.quill.container.addEventListener('keyup', keyboardHandler, false);
 };
 
 /**
@@ -226,12 +311,40 @@ QuillMentions.prototype.textChangeHandler = function textChangeHandler(_delta) {
             that.show();
         });
     }
-    else if (this.container.className.search(/ql\-is\-mentioning/) !== -1) {
+    else if (this.isMentioning()) {
         this.currentMention = null;
         this.range = null;   // Prevent restoring selection to last saved
         this.hide();
     }
 };
+
+/**
+ *
+ */
+QuillMentions.prototype.keyboardHandler = function(e) {
+    var code = e.keyCode || e.which;
+    if (this.isMentioning()) {
+        console.log("We are mentioning!");
+        this._dispatchKeycode(code);
+        e.stopPropagation();
+        e.preventDefault();
+    }
+};
+
+QuillMentions.prototype._dispatchKeycode = function(code) {
+    var callback = KEYS[code];
+    if (callback) callback.call(this);
+};
+
+
+/**
+ * @method
+ */
+QuillMentions.prototype.hasSelection = function() {
+    return this.selectedChoiceIndex !== -1;
+};
+
+
 
 /**
  * @method
@@ -268,8 +381,12 @@ QuillMentions.prototype.addMentionHandler = function addMentionHandler(e) {
     e.stopPropagation();
 };
 
+QuillMentions.prototype.isMentioning = function() {
+    return this.container.className.search(/ql\-is\-mentioning/) !== -1;
+};
 
-},{"./controller":1,"./defaults/defaults":2,"./format":3,"./search":6,"./view":11}],6:[function(require,module,exports){
+
+},{"./controller":1,"./defaults/defaults":2,"./format":3,"./keyboard":5,"./search":7,"./view":12}],7:[function(require,module,exports){
 // TODO - rename to "model"
 var loadJSON = require("./utilities/ajax").loadJSON;
 /**
@@ -343,7 +460,7 @@ function ajaxError(error) {
 function noCallbackError(functionName) {
     console.log("Warning!", functionName, "was not provided a callback. Don't be a ding-dong.");
 }
-},{"./utilities/ajax":7}],7:[function(require,module,exports){
+},{"./utilities/ajax":8}],8:[function(require,module,exports){
 /** @module utilities/ajax */
 module.exports = {
 
@@ -371,8 +488,21 @@ module.exports = {
         return xhr;
     },
 };
-},{}],8:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
+module.exports.addClass = addClass;
+module.exports.removeClass = removeClass;
 module.exports.getOlderSiblingsInclusive = getOlderSiblingsInclusive;
+
+
+function addClass(node, className) {
+    if (!node) return;
+    node.className += " "+className;
+}
+
+function removeClass(node, className) {
+    if (!node) return;
+    node.className = node.className.replace(className, "");
+}
 
 function getOlderSiblingsInclusive(node) {
     var result = [node];
@@ -383,7 +513,7 @@ function getOlderSiblingsInclusive(node) {
     }
     return result;
 }
-},{}],9:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 /**
  * Extend module
  * @module utilities/extend
@@ -422,7 +552,7 @@ function extendHelper(destination, source) {
     }
     return destination;
 }
-},{}],10:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 /** @module utilities/identity */
 
 module.exports = identity;
@@ -431,7 +561,7 @@ module.exports = identity;
 function identity(d) {
     return d;
 }
-},{}],11:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 var getOlderSiblingsInclusive = require("./utilities/dom").getOlderSiblingsInclusive;
 
 module.exports = function addView(QuillMentions) {
@@ -532,4 +662,4 @@ module.exports = function addView(QuillMentions) {
     });
 
 };
-},{"./utilities/dom":8}]},{},[1,2,3,4,5,6,7,8,9,10,11]);
+},{"./utilities/dom":9}]},{},[1,2,3,4,5,6,7,8,9,10,11,12]);

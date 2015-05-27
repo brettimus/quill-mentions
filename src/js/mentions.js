@@ -3,7 +3,8 @@ var addController = require("./controller"),
     addSearch = require("./search"),
     addView = require("./view");
 
-var defaultFactory = require("./defaults/defaults");
+var defaultFactory = require("./defaults/defaults"),
+    KEYS = require("./keyboard");
 
 addController(QuillMentions);
 addFormat(QuillMentions);
@@ -30,31 +31,11 @@ function QuillMentions(quill, options) {
     this.currentChoices = null;
     this.currentMention = null;
 
+    this.selectedChoiceIndex = -1;
+
     this.hide();
     this.addFormat(); // adds custom format for mentions
     this.addListeners();
-
-    // TODO - (re)move this. just putting it here as a reminder...
-    this.hotKeys = {
-        38: [
-            { // up arrow
-                callback: function() {
-    
-                },
-                key: 38,
-                metaKey: false,
-            },
-            ],
-        40: [
-            { // down arrow
-                callback: function() {
-    
-                },
-                key: 40,
-                metaKey: false,
-            },
-            ],
-    };
 }
 
 /**
@@ -62,12 +43,15 @@ function QuillMentions(quill, options) {
  */
 QuillMentions.prototype.addListeners = function addListeners() {
     var textChangeHandler = this.textChangeHandler.bind(this),
-        addMentionHandler = this.addMentionHandler.bind(this);
+        addMentionHandler = this.addMentionHandler.bind(this),
+        keyboardHandler   = this.keyboardHandler.bind(this);
 
     this.quill.on(this.quill.constructor.events.TEXT_CHANGE, textChangeHandler);
 
     this.container.addEventListener('click', addMentionHandler, false);
     this.container.addEventListener('touchend', addMentionHandler, false);
+
+    this.quill.container.addEventListener('keyup', keyboardHandler, false);
 };
 
 /**
@@ -87,12 +71,40 @@ QuillMentions.prototype.textChangeHandler = function textChangeHandler(_delta) {
             that.show();
         });
     }
-    else if (this.container.className.search(/ql\-is\-mentioning/) !== -1) {
+    else if (this.isMentioning()) {
         this.currentMention = null;
         this.range = null;   // Prevent restoring selection to last saved
         this.hide();
     }
 };
+
+/**
+ *
+ */
+QuillMentions.prototype.keyboardHandler = function(e) {
+    var code = e.keyCode || e.which;
+    if (this.isMentioning()) {
+        console.log("We are mentioning!");
+        this._dispatchKeycode(code);
+        e.stopPropagation();
+        e.preventDefault();
+    }
+};
+
+QuillMentions.prototype._dispatchKeycode = function(code) {
+    var callback = KEYS[code];
+    if (callback) callback.call(this);
+};
+
+
+/**
+ * @method
+ */
+QuillMentions.prototype.hasSelection = function() {
+    return this.selectedChoiceIndex !== -1;
+};
+
+
 
 /**
  * @method
@@ -127,5 +139,9 @@ QuillMentions.prototype.addMentionHandler = function addMentionHandler(e) {
     this.quill.insertText(insertAt + toInsert.length, " ");
     this.quill.setSelection(toFocus, toFocus);
     e.stopPropagation();
+};
+
+QuillMentions.prototype.isMentioning = function() {
+    return this.container.className.search(/ql\-is\-mentioning/) !== -1;
 };
 

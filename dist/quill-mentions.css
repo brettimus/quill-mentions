@@ -15,15 +15,8 @@
   -webkit-transform: translateZ(1px);
   transform: translateZ(1px);
 }
-.ql-mentions ul li.no-match {
-  pointer-events: none;
-}
 .ql-mentions ul li:last-child {
   border-bottom: none;
-}
-.ql-mentions ul li:hover {
-  background: #888;
-  color: white;
 }
 .ql-is-mentioning.ql-mentions {
   display: inherit;
@@ -38,4 +31,12 @@
 .ql-mention-item {
   color: #2ba6cb;
   text-decoration: underline;
+}
+.ql-mention-item.ql-mention-item-selected, .ql-mention-item:hover {
+  background: #888;
+  color: white;
+}
+
+.ql-mention-item-no-match {
+  pointer-events: none;
 }
