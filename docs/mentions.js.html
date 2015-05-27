@@ -25,12 +25,15 @@
     
     <section>
         <article>
-            <pre class="prettyprint source"><code>var addFormat = require("./format"),
+            <pre class="prettyprint source"><code>var addController = require("./controller"),
+    addFormat = require("./format"),
     addSearch = require("./search"),
     addView = require("./view");
 
-var defaultFactory = require("./defaults/defaults");
+var defaultFactory = require("./defaults/defaults"),
+    KEYS = require("./keyboard");
 
+addController(QuillMentions);
 addFormat(QuillMentions);
 addSearch(QuillMentions);
 addView(QuillMentions);
@@ -55,6 +58,8 @@ function QuillMentions(quill, options) {
     this.currentChoices = null;
     this.currentMention = null;
 
+    this.selectedChoiceIndex = -1;
+
     this.hide();
     this.addFormat(); // adds custom format for mentions
     this.addListeners();
@@ -65,12 +70,17 @@ function QuillMentions(quill, options) {
  */
 QuillMentions.prototype.addListeners = function addListeners() {
     var textChangeHandler = this.textChangeHandler.bind(this),
-        addMentionHandler = this.addMentionHandler.bind(this);
+        selectionChangeHandler = this.selectionChangeHandler.bind(this),
+        addMentionHandler = this.addMentionHandler.bind(this),
+        keyboardHandler   = this.keyboardHandler.bind(this);
 
     this.quill.on(this.quill.constructor.events.TEXT_CHANGE, textChangeHandler);
+    this.quill.on(this.quill.constructor.events.SELECTION_CHANGE, selectionChangeHandler);
 
     this.container.addEventListener('click', addMentionHandler, false);
     this.container.addEventListener('touchend', addMentionHandler, false);
+
+    this.quill.container.addEventListener('keyup', keyboardHandler, false); // TIL keypress is intended for keys that normally produce a character
 };
 
 /**
@@ -82,7 +92,7 @@ QuillMentions.prototype.textChangeHandler = function textChangeHandler(_delta) {
         that;
     if (mention) {
         this.currentMention = mention;
-        queryString = mention[0].replace("@", "");
+        queryString = mention[0].replace(this.options.triggerSymbol, "");
         that = this;
         this.search(queryString, function(data) {
             that.currentChoices = data.slice(0, that.options.choiceMax);
@@ -90,12 +100,53 @@ QuillMentions.prototype.textChangeHandler = function textChangeHandler(_delta) {
             that.show();
         });
     }
-    else if (this.container.style.left !== this.options.hideMargin) {
-        this.currentMention = null;
+    else if (this.isMentioning()) {
+        // this.currentMention = null; // DANGER HACK TODO NOOOO
         this.range = null;   // Prevent restoring selection to last saved
         this.hide();
     }
 };
+
+/**
+ * @method
+ */
+QuillMentions.prototype.selectionChangeHandler = function selectionChangeHandler(range) {
+    if (!range) {
+        this.hide();
+        this.quill.setSelection(null);
+    }
+};
+
+/**
+ * @method
+ */
+QuillMentions.prototype.keyboardHandler = function(e) {
+    var code = e.keyCode || e.which;
+    if (this.isMentioning() || code === 13) { // need special logic for enter key :sob:
+        console.log("We are mentioning!");
+        this._dispatchKeycode(code);
+        e.stopPropagation();
+        e.preventDefault();
+    }
+};
+
+QuillMentions.prototype._dispatchKeycode = function(code) {
+    var callback = KEYS[code];
+    if (callback) {
+        this.quill.setSelection(this.range); // HACK oh noz!
+        callback.call(this);
+    }
+};
+
+
+/**
+ * @method
+ */
+QuillMentions.prototype.hasSelection = function() {
+    return this.selectedChoiceIndex !== -1;
+};
+
+
 
 /**
  * @method
@@ -112,37 +163,41 @@ QuillMentions.prototype.findMention = function findMention() {
     return match;
 };
 
-/**
- * @method
- */
-QuillMentions.prototype.renderCurrentChoices = function renderCurrentChoices() {
-    if (this.currentChoices && this.currentChoices.length) {
-        var choices = this.currentChoices.map(function(choice) {
-            return this.options.choiceTemplate.replace("{{choice}}", choice.name).replace("{{data}}", choice.data);
-        }, this).join("");
-        this.container.innerHTML = this.options.template.replace("{{choices}}", choices);
-    }
-    else {
-        // render helpful message about nothing matching so far...
-        this.container.innerHTML = this.options.template.replace("{{choices}}", "&lt;li>&lt;i>Womp womp...&lt;/i>&lt;/li>");
-    }
-};
+
 
 /**
  * @method
  */
 QuillMentions.prototype.addMentionHandler = function addMentionHandler(e) {
-    console.log("Current selection when a choice is clicked: ", this.range);
-    var target = e.target || e.srcElement,
-        insertAt = this.currentMention.index,
-        toInsert = "@"+target.innerText,
-        toFocus = insertAt + toInsert.length + 1;
-    this.quill.deleteText(insertAt, insertAt + this.currentMention[0].length);
-    this.quill.insertText(insertAt, toInsert, "mention", this.options.mentionClass);
-    this.quill.insertText(insertAt + toInsert.length, " ");
-    this.quill.setSelection(toFocus, toFocus);
-    this.hide();
+    var target = e.target || e.srcElement;
+    if (target.tagName === "li") { // TODO - this is bad news... but adding a pointer-event: none; does not work bc i'm using bubbling...
+        console.log(target);
+        this.addMention(target);
+    }
     e.stopPropagation();
+};
+
+/**
+ * @method
+ */
+ QuillMentions.prototype.addMention = function addMention(node) {
+     var insertAt = this.currentMention.index,
+         toInsert = "@"+node.innerText,
+         toFocus = insertAt + toInsert.length + 1;
+
+     this.hide(); // sequencing?
+
+     this.quill.deleteText(insertAt, insertAt + this.currentMention[0].length);
+     this.quill.insertText(insertAt, toInsert, "mention", this.options.mentionClass+"-"+node.dataset.mention);
+     this.quill.insertText(insertAt + toInsert.length, " ");
+     this.quill.setSelection(toFocus, toFocus);
+ };
+
+/**
+ * @method
+ */
+QuillMentions.prototype.isMentioning = function() {
+    return this.container.className.search(/ql\-is\-mentioning/) !== -1;
 };
 
 </code></pre>
@@ -155,13 +210,13 @@ QuillMentions.prototype.addMentionHandler = function addMentionHandler(e) {
 </div>
 
 <nav>
-    <h2><a href="index.html">Index</a></h2><h3>Modules</h3><ul><li><a href="defaults.html">defaults/defaults</a></li><li><a href="ajax.html">utilities/ajax</a></li><li><a href="extend.html">utilities/extend</a></li><li><a href="identity.html">utilities/identity</a></li></ul><h3>Classes</h3><ul><li><a href="QuillMentions.html">QuillMentions</a></li></ul><h3>Namespaces</h3><ul><li><a href="defaults-ajaxDefaults.html">ajaxDefaults</a></li><li><a href="defaults-defaults.html">defaults</a></li></ul><h3>Global</h3><ul><li><a href="global.html#extend">extend</a></li><li><a href="global.html#extendHelper">extendHelper</a></li><li><a href="global.html#identity">identity</a></li><li><a href="global.html#loadJSON">loadJSON</a></li></ul>
+    <h2><a href="index.html">Index</a></h2><h3>Modules</h3><ul><li><a href="defaults.html">defaults/defaults</a></li><li><a href="ajax.html">utilities/ajax</a></li><li><a href="extend.html">utilities/extend</a></li><li><a href="identity.html">utilities/identity</a></li></ul><h3>Classes</h3><ul><li><a href="QuillMentions.html">QuillMentions</a></li></ul><h3>Namespaces</h3><ul><li><a href="KEYS.html">KEYS</a></li><li><a href="defaults-ajaxDefaults.html">ajaxDefaults</a></li><li><a href="defaults-defaults.html">defaults</a></li></ul><h3>Global</h3><ul><li><a href="global.html#_moveSelection">_moveSelection</a></li><li><a href="global.html#extend">extend</a></li><li><a href="global.html#extendHelper">extendHelper</a></li><li><a href="global.html#handleDownKey">handleDownKey</a></li><li><a href="global.html#handleEnter">handleEnter</a></li><li><a href="global.html#handleEscape">handleEscape</a></li><li><a href="global.html#handleUpKey">handleUpKey</a></li><li><a href="global.html#identity">identity</a></li><li><a href="global.html#loadJSON">loadJSON</a></li></ul>
 </nav>
 
 <br clear="both">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.2.2</a> on Sat May 23 2015 05:21:01 GMT-0700 (PDT)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.2.2</a> on Wed May 27 2015 01:38:34 GMT-0700 (PDT)
 </footer>
 
 <script> prettyPrint(); </script>

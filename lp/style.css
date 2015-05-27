@@ -1,0 +1,42 @@
+html, body {
+  margin: 0;
+  padding: 0;
+}
+
+h1 {
+  text-align: center;
+}
+
+.quill-wrapper {
+  border-bottom: solid 5px #ddd;
+  border-left: solid 2px #ddd;
+  border-right: solid 2px #ddd;
+  border-top: solid 2px #ddd;
+  box-sizing: border-box;
+  margin: 0 auto;
+  max-width: 500px;
+}
+.quill-wrapper.focus {
+  border-color: #129FEA;
+}
+
+.toolbar,
+.quill-wrapper .ql-container {
+  margin: 0 auto;
+  max-width: 500px;
+
+}
+
+.quill-wrapper .toolbar {
+  padding: 14px 0 14px 14px;
+}
+
+.quill-wrapper .ql-container {
+  border-top: solid 1px #ddd;
+  box-sizing: border-box;
+  height: 300px;
+  max-width: 500px;
+}
+
+.quill-wrapper.focus {
+}

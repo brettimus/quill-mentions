@@ -24,6 +24,7 @@ var defaults = {
     choices: [],
     choiceTemplate: "<li data-mention=\"{{data}}\">{{choice}}</li>",
     containerClassName: "ql-mentions",
+    format: identity,
     hideMargin: '-10000px',
     matcher: /@\w+$/i,
     mentionClass: "mention-item",
@@ -31,6 +32,7 @@ var defaults = {
     noMatchTemplate: "<li class='ql-mention-choice-no-match'><i>{{message}}</i></li>",
     offset: 10,
     template: '<ul>{{choices}}</ul>',
+    triggerSymbol: "@",
 };
 
 /**

@@ -43,10 +43,12 @@ function QuillMentions(quill, options) {
  */
 QuillMentions.prototype.addListeners = function addListeners() {
     var textChangeHandler = this.textChangeHandler.bind(this),
+        selectionChangeHandler = this.selectionChangeHandler.bind(this),
         addMentionHandler = this.addMentionHandler.bind(this),
         keyboardHandler   = this.keyboardHandler.bind(this);
 
     this.quill.on(this.quill.constructor.events.TEXT_CHANGE, textChangeHandler);
+    this.quill.on(this.quill.constructor.events.SELECTION_CHANGE, selectionChangeHandler);
 
     this.container.addEventListener('click', addMentionHandler, false);
     this.container.addEventListener('touchend', addMentionHandler, false);
@@ -63,7 +65,7 @@ QuillMentions.prototype.textChangeHandler = function textChangeHandler(_delta) {
         that;
     if (mention) {
         this.currentMention = mention;
-        queryString = mention[0].replace("@", "");
+        queryString = mention[0].replace(this.options.triggerSymbol, "");
         that = this;
         this.search(queryString, function(data) {
             that.currentChoices = data.slice(0, that.options.choiceMax);
@@ -79,7 +81,17 @@ QuillMentions.prototype.textChangeHandler = function textChangeHandler(_delta) {
 };
 
 /**
- *
+ * @method
+ */
+QuillMentions.prototype.selectionChangeHandler = function selectionChangeHandler(range) {
+    if (!range) {
+        this.hide();
+        this.quill.setSelection(null);
+    }
+};
+
+/**
+ * @method
  */
 QuillMentions.prototype.keyboardHandler = function(e) {
     var code = e.keyCode || e.which;

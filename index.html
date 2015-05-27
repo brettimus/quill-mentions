@@ -1,0 +1,101 @@
+<!doctype html>
+<html class="no-js" lang="">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <title>Quill Mentions</title>
+        <meta name="description" content="A module for at-style mentions in Quill.js">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <link rel="stylesheet" href="./lp/quill.base.css" />
+        <link rel="stylesheet" href="./lp/quill.snow.css" />
+        <link rel="stylesheet" href="./dist/quill-mentions.css" />
+        <link rel="stylesheet" href="./lp/style.css">
+    </head>
+    <body>
+        <!--[if lt IE 8]>
+            <p class="browserupgrade">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
+        <![endif]-->
+
+        <h1>Quill Mentions</h1>
+
+        <div class="quill-wrapper">
+         <div class="toolbar ql-toolbar ql-snow">
+            <span class="ql-format-group">
+              <span title="Bold" class="ql-format-button ql-bold"></span>
+              <span class="ql-format-separator"></span>
+              <span title="Italic" class="ql-format-button ql-italic"></span>
+              <span class="ql-format-separator"></span>
+              <span title="Underline" class="ql-format-button ql-underline"></span>
+            </span>
+
+            <span class="ql-format-group">
+              <span title="List" class="ql-format-button ql-list"></span>
+              <span class="ql-format-separator"></span>
+              <span title="Bullet" class="ql-format-button ql-bullet"></span>
+              <span class="ql-format-separator"></span>
+            </span>
+            <span class="ql-format-group">
+              <span title="Link" class="ql-format-button ql-link"></span>
+            </span>
+          </div>
+          <div class="editor ql-container ql-snow" id="editor"></div>
+        </div>
+
+        <script src="./lp/utilities.js"></script>
+        <script src="./dist/quill.js"></script>
+        <script src="./dist/quill-mentions.js"></script>
+        <script>
+
+
+        loadJSON("./lp/emoji.json", loadEditor, emojiLoadError)
+
+        function loadEditor(data) {
+
+            var emojiChoices = data.map(function(em) { 
+                return {data: em.emoji, name: em.aliases[0]};
+            });
+
+            console.log(emojiChoices);
+
+
+            // Initialize editor with custom theme and modules
+            Quill.registerModule("mentions", QuillMentions);
+            var quillConfig = {
+                modules: {
+                  'toolbar': { container: ".toolbar" },
+                  'link-tooltip': true,
+                  'mentions': {
+                      choices: emojiChoices,
+                      choiceTemplate: "<li>{{data}}</li>",
+                      matcher: /\:(\w{2,})$/i, // for emoji, calling with :
+                      noMatchMessage: "Type a real emoji!",
+                      triggerSymbol: ":",
+                  },
+                },
+                theme: 'snow',
+            };
+            var quill = editor = new Quill('#editor', quillConfig);
+            quill.on("selection-change", function(range) {
+                if (range) addClass(quill.root.parentNode.parentNode, "focus");
+                else removeClass(quill.root.parentNode.parentNode, "focus");
+            })
+        }
+
+        function emojiLoadError() {
+            console.log("Emoji no loady");
+        }
+
+
+        </script>
+        <!-- Google Analytics: change UA-XXXXX-X to be your site's ID. -->
+        <script>
+            (function(b,o,i,l,e,r){b.GoogleAnalyticsObject=l;b[l]||(b[l]=
+            function(){(b[l].q=b[l].q||[]).push(arguments)});b[l].l=+new Date;
+            e=o.createElement(i);r=o.getElementsByTagName(i)[0];
+            e.src='https://www.google-analytics.com/analytics.js';
+            r.parentNode.insertBefore(e,r)}(window,document,'script','ga'));
+            ga('create','UA-XXXXX-X','auto');ga('send','pageview');
+        </script>
+    </body>
+</html>

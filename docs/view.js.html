@@ -25,52 +25,20 @@
     
     <section>
         <article>
-            <pre class="prettyprint source"><code>module.exports = function addView(QuillMentions) {
+            <pre class="prettyprint source"><code>var DOM = require("./utilities/dom"),
+    addClass = DOM.addClass,
+    removeClass = DOM.removeClass,
+    getOlderSiblingsInclusive = DOM.getOlderSiblingsInclusive;
 
-    /**
-     * @method
-     * @param {Object} reference
-     * @return {number[]}
-     */
-    QuillMentions.prototype.position = function position(reference) {
-        var referenceBounds,
-            parentBounds,
-            offsetLeft,
-            offsetTop,
-            offsetBottom,
-            left,
-            top;
+module.exports = function addView(QuillMentions) {
 
-        if (reference) {
-            // Place tooltip under reference centered
-            // reference might be selection range so must use getBoundingClientRect()
-            referenceBounds = reference.getBoundingClientRect();
-            parentBounds = this.quill.container.getBoundingClientRect();
-            offsetLeft = referenceBounds.left - parentBounds.left;
-            offsetTop = referenceBounds.top - parentBounds.top;
-            offsetBottom = referenceBounds.bottom - parentBounds.bottom;
-            left = offsetLeft + referenceBounds.width/2 - this.container.offsetWidth/2;
-            top = offsetTop + referenceBounds.height + this.options.offset;
-            if (top + this.container.offsetHeight > this.quill.container.offsetHeight) {
-                top = offsetTop - this.container.offsetHeight - this.options.offset;
-            }
-            left = Math.max(0, Math.min(left, this.quill.container.offsetWidth - this.container.offsetWidth));
-            top = Math.max(0, Math.min(top, this.quill.container.offsetHeight - this.container.offsetHeight));
-
-        }
-        else {
-            // Place tooltip in middle of editor viewport
-            left = this.quill.container.offsetWidth/2 - this.container.offsetWidth/2;
-            top = this.quill.container.offsetHeight/2 - this.container.offsetHeight/2;
-        }
-        return [left, top];
-    };
 
     /**
      * @method
      */
     QuillMentions.prototype.hide = function hide() {
-        this.container.style.left = this.options.hideMargin;
+        removeClass(this.container, "ql-is-mentioning");
+        this.container.style.marginTop = "0";
         if (this.range) this.quill.setSelection(this.range);
         this.range = null;
     };
@@ -80,24 +48,36 @@
      * @param {Object} reference
      */
     QuillMentions.prototype.show = function show(reference) {
-        this.range = this.quill.getSelection();
-        reference = reference || this._findMentionNode(this.range);
-        console.log(reference);
-        var position,
-            left,
-            top;
 
-        position = this.position(reference);
-        left = position[0];
-        top = position[1];
-        this.container.style.left = left+"px";
-        this.container.style.top  = top+"px";
-        this.container.focus();
+        var qlContainer = this.quill.container,
+            qlEditor = this.quill.editor.root,
+            qlLines,
+            paddingTop = 10,
+            negMargin = -paddingTop;
+
+
+        this.range = this.quill.getSelection();
+        qlLines = this._findOffsetLines(this.range);
+
+        negMargin += qlEditor.getBoundingClientRect().height;
+        negMargin -= qlLines.reduce(function(total, line) {
+            return total + line.getBoundingClientRect().height;
+        }, 0);
+
+        this.container.style.marginTop = "-"+negMargin+'px';
+        addClass(this.container, "ql-is-mentioning");
+
+        // add keyboard listeners?
+        // or have keyboard listeners filter action based on "ql-is-mentioning";
+
+        this.container.focus(); // has no effect...
     };
 
+
     /**
+     * Return the DOM node that encloses the line on which current mention is being typed.
      * @method
-     * @access private
+     * @private
      * @param {Range} range
      * @return {Node|null}
      */
@@ -108,17 +88,45 @@
             node;
 
         leafAndOffset = this.quill.editor.doc.findLeafAt(range.start, true);
-        console.log("leafAndOffset", leafAndOffset);
         leaf = leafAndOffset[0];
-        offset = leafAndOffset[1];
+        offset = leafAndOffset[1]; // how many chars in front of current range
         if (leaf) node = leaf.node;
         while (node) {
-            console.log("Finding mention node. Looping up...", node);
-            if (node.tagName === "DIV") return node;
+            if (node.tagName === "DIV") break;
             node = node.parentNode;
         }
-        return null;
+        if (!node) return null;
+        return node;
     };
+
+    /**
+     * Return an array of dom nodes corresponding to all lines at or before the line corresponding to the current range.
+     * @method
+     * @private
+     * @param {Range} range
+     * @return {Node[]}
+     */
+    QuillMentions.prototype._findOffsetLines = function(range) {
+        var node = this._findMentionNode(range);
+        return getOlderSiblingsInclusive(node);
+    };
+
+
+    /**
+     * Render and return the "no matches found" template string
+     * @getter
+     * @private
+     * @return {string}
+     */
+    Object.defineProperty(QuillMentions.prototype, "noMatchHTML", {
+        get: function() {
+            var template = this.options.noMatchTemplate,
+                message = this.options.noMatchMessage;
+
+            return message ? template.replace("{{message}}", message) : null;
+        }
+    });
+
 };</code></pre>
         </article>
     </section>
@@ -129,13 +137,13 @@
 </div>
 
 <nav>
-    <h2><a href="index.html">Index</a></h2><h3>Modules</h3><ul><li><a href="defaults.html">defaults/defaults</a></li><li><a href="ajax.html">utilities/ajax</a></li><li><a href="extend.html">utilities/extend</a></li><li><a href="identity.html">utilities/identity</a></li></ul><h3>Classes</h3><ul><li><a href="QuillMentions.html">QuillMentions</a></li></ul><h3>Namespaces</h3><ul><li><a href="defaults-ajaxDefaults.html">ajaxDefaults</a></li><li><a href="defaults-defaults.html">defaults</a></li></ul><h3>Global</h3><ul><li><a href="global.html#extend">extend</a></li><li><a href="global.html#extendHelper">extendHelper</a></li><li><a href="global.html#identity">identity</a></li><li><a href="global.html#loadJSON">loadJSON</a></li></ul>
+    <h2><a href="index.html">Index</a></h2><h3>Modules</h3><ul><li><a href="defaults.html">defaults/defaults</a></li><li><a href="ajax.html">utilities/ajax</a></li><li><a href="extend.html">utilities/extend</a></li><li><a href="identity.html">utilities/identity</a></li></ul><h3>Classes</h3><ul><li><a href="QuillMentions.html">QuillMentions</a></li></ul><h3>Namespaces</h3><ul><li><a href="KEYS.html">KEYS</a></li><li><a href="defaults-ajaxDefaults.html">ajaxDefaults</a></li><li><a href="defaults-defaults.html">defaults</a></li></ul><h3>Global</h3><ul><li><a href="global.html#_moveSelection">_moveSelection</a></li><li><a href="global.html#extend">extend</a></li><li><a href="global.html#extendHelper">extendHelper</a></li><li><a href="global.html#handleDownKey">handleDownKey</a></li><li><a href="global.html#handleEnter">handleEnter</a></li><li><a href="global.html#handleEscape">handleEscape</a></li><li><a href="global.html#handleUpKey">handleUpKey</a></li><li><a href="global.html#identity">identity</a></li><li><a href="global.html#loadJSON">loadJSON</a></li></ul>
 </nav>
 
 <br clear="both">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.2.2</a> on Sat May 23 2015 05:21:01 GMT-0700 (PDT)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.2.2</a> on Wed May 27 2015 01:38:34 GMT-0700 (PDT)
 </footer>
 
 <script> prettyPrint(); </script>

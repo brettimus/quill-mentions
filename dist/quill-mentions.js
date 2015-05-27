@@ -13,7 +13,6 @@ module.exports = function addController(QuillMentions) {
         else {
             // render helpful message about nothing matching so far...
             noMatchFoundMessage = this.noMatchHTML;
-            console.log(noMatchFoundMessage);
             if (noMatchFoundMessage) {
                 this.render(noMatchFoundMessage);
             } else {
@@ -96,6 +95,7 @@ var defaults = {
     choices: [],
     choiceTemplate: "<li data-mention=\"{{data}}\">{{choice}}</li>",
     containerClassName: "ql-mentions",
+    format: identity,
     hideMargin: '-10000px',
     matcher: /@\w+$/i,
     mentionClass: "mention-item",
@@ -103,6 +103,7 @@ var defaults = {
     noMatchTemplate: "<li class='ql-mention-choice-no-match'><i>{{message}}</i></li>",
     offset: 10,
     template: '<ul>{{choices}}</ul>',
+    triggerSymbol: "@",
 };
 
 /**
@@ -300,10 +301,12 @@ function QuillMentions(quill, options) {
  */
 QuillMentions.prototype.addListeners = function addListeners() {
     var textChangeHandler = this.textChangeHandler.bind(this),
+        selectionChangeHandler = this.selectionChangeHandler.bind(this),
         addMentionHandler = this.addMentionHandler.bind(this),
         keyboardHandler   = this.keyboardHandler.bind(this);
 
     this.quill.on(this.quill.constructor.events.TEXT_CHANGE, textChangeHandler);
+    this.quill.on(this.quill.constructor.events.SELECTION_CHANGE, selectionChangeHandler);
 
     this.container.addEventListener('click', addMentionHandler, false);
     this.container.addEventListener('touchend', addMentionHandler, false);
@@ -320,7 +323,7 @@ QuillMentions.prototype.textChangeHandler = function textChangeHandler(_delta) {
         that;
     if (mention) {
         this.currentMention = mention;
-        queryString = mention[0].replace("@", "");
+        queryString = mention[0].replace(this.options.triggerSymbol, "");
         that = this;
         this.search(queryString, function(data) {
             that.currentChoices = data.slice(0, that.options.choiceMax);
@@ -336,7 +339,17 @@ QuillMentions.prototype.textChangeHandler = function textChangeHandler(_delta) {
 };
 
 /**
- *
+ * @method
+ */
+QuillMentions.prototype.selectionChangeHandler = function selectionChangeHandler(range) {
+    if (!range) {
+        this.hide();
+        this.quill.setSelection(null);
+    }
+};
+
+/**
+ * @method
  */
 QuillMentions.prototype.keyboardHandler = function(e) {
     var code = e.keyCode || e.which;
@@ -447,7 +460,8 @@ module.exports = function addSearch(QuillMentions) {
      * @param {searchCallback} callback - Callback that handles possible matches
      */
     QuillMentions.prototype.staticSearch = function staticSearch(qry, callback) {
-        var data = this.options.choices.filter(staticFilter(qry));
+        console.log("Static Search Query", qry);
+        var data = this.options.choices.filter(staticFilter(qry).bind(this));
         if (!callback) noCallbackError("staticSearch");
         callback(data);
     };
@@ -474,7 +488,7 @@ module.exports = function addSearch(QuillMentions) {
 
 function staticFilter(qry) {
     return function(choice) {
-        // TODO - use case insensitive regexp
+        var formatter = this.options.format;
         return choice.name.toLowerCase().indexOf(qry.toLowerCase()) !== -1;
     };
 }

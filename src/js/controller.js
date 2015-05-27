@@ -12,7 +12,6 @@ module.exports = function addController(QuillMentions) {
         else {
             // render helpful message about nothing matching so far...
             noMatchFoundMessage = this.noMatchHTML;
-            console.log(noMatchFoundMessage);
             if (noMatchFoundMessage) {
                 this.render(noMatchFoundMessage);
             } else {

@@ -25,7 +25,8 @@ module.exports = function addSearch(QuillMentions) {
      * @param {searchCallback} callback - Callback that handles possible matches
      */
     QuillMentions.prototype.staticSearch = function staticSearch(qry, callback) {
-        var data = this.options.choices.filter(staticFilter(qry));
+        console.log("Static Search Query", qry);
+        var data = this.options.choices.filter(staticFilter(qry).bind(this));
         if (!callback) noCallbackError("staticSearch");
         callback(data);
     };
@@ -52,7 +53,7 @@ module.exports = function addSearch(QuillMentions) {
 
 function staticFilter(qry) {
     return function(choice) {
-        // TODO - use case insensitive regexp
+        var formatter = this.options.format;
         return choice.name.toLowerCase().indexOf(qry.toLowerCase()) !== -1;
     };
 }
