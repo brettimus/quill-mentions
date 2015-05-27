@@ -3,7 +3,14 @@ _Under construction_
 
 An at-style mentions module for quilljs.
 
-## Usage
+## Get it.
+You can get `quill-mentions` through npm
+```bash
+$ npm install quill-modules
+```
+Or you can just take the files from the `dist` folder. That works too.
+
+## Use it.
 `quill-mentions` exposes a single global variable, `QuillMentions`. 
 
 To include mentions in your Quill project, simply add the stylesheet and all the Javascripts to your page.
