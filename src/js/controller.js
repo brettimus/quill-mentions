@@ -51,6 +51,7 @@ Controller.prototype.search = function search(qry, callback) {
  * @param {Object} options
  */
 function AJAXController(formatter, view, options) {
+    Controller.call(this, formatter, view, options);
     this.path = options.path;
     this.queryParameter = options.queryParameter;
     this._latestCall = null;
@@ -64,12 +65,17 @@ AJAXController.prototype = Object.create(Controller.prototype);
  */
 AJAXController.prototype.search = function search(qry, callback) {
 
-    if (this._latestCall) this.latest.abort();  // caches ajax calls so we can cancel them as the input is updated
+    if (this._latestCall) this._latestCall.abort();  // caches ajax calls so we can cancel them as the input is updated
     var qryString = this.path +
                      "?" + this.queryParameter +
                      "=" + encodeURIComponent(qry);
 
-    this._latestCall = loadJSON(qryString, this._callback.bind(this), ajaxError);
+    this._latestCall = loadJSON(qryString, success.bind(this), ajaxError);
+
+    function success(data) {
+        this._callback(data);
+        if (callback) callback();
+    }
 };
 
 /**
@@ -79,8 +85,8 @@ AJAXController.prototype.search = function search(qry, callback) {
  * @param {array} data
  */
 AJAXController.prototype._callback = function(data) {
-    data = data.slice(0, this.max);
-    this.view.render(data.map(this.formatter));
+    data = data.slice(0, this.max).map(this.format);
+    this.view.render(data);
 };
 
 function ajaxError(error) {

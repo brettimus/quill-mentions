@@ -18,20 +18,23 @@ function View(container, templates, options) {
 }
 
 /**
- * Creates view from data and calls View`_renderSuccess. If there are no data, calls View~_renderError.
+ * Creates view from data and calls View~_renderSuccess. If there are no data, calls View~_renderError.
  * @method
  * @param {array} data
  */
 View.prototype.render = function(data) {
-    var items,
+    var templates = this.templates,
+        items,
+        err,
         toRender;
     if (!data || !data.length) {
-        toRender = this.templates.listItem.replace("{{choices}}", this.error);
-        return this._renderError();
+        err = templates.error.replace("{{message}}", this.options.errMessage);
+        toRender = templates.list.replace("{{choices}}", err);
+        return this._renderError(toRender);
     }
 
     items = data.map(this._renderLI, this).join("");
-    toRender = this.templates.list.replace("{{choices}}", items);
+    toRender = templates.list.replace("{{choices}}", items);
     return this._renderSucess(toRender);
 };
 
@@ -157,6 +160,7 @@ View.prototype._getNegativeMargin = function(quill) {
         range;
 
     qlLines = this._findOffsetLines(quill);
+    console.log(qlLines);
 
     negMargin += this._nodeHeight(qlEditor);
     negMargin -= qlLines.reduce(function(total, line) {

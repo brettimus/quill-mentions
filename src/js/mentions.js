@@ -55,11 +55,12 @@ function QuillMentions(quill, options) {
  * @param {Object} options - Configuration for the view
  */
 QuillMentions.prototype.setView = function(container, options) {
-    var templates = {};
+    var templates = {},
+        errMessage = options.noMatchMessage;
     templates.list = options.template;
     templates.listItem = options.choiceTemplate;
     templates.error = options.noMatchTemplate;
-    this.view = new View(container, templates);
+    this.view = new View(container, templates, {errMessage: errMessage});
     return this;
 };
 
@@ -111,6 +112,7 @@ QuillMentions.prototype.listenTextChange = function listenTextChange(quill) {
             query = mention[0].replace(this.triggerSymbol, "");
 
             this.controller.search(query, function() {
+                console.log("DONT CALL IT A COMEBACK");
                 _this.view.show(_this.quill);
             });
         }
