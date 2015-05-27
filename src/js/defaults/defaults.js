@@ -14,8 +14,8 @@ var extend = require("../utilities/extend"),
  * @prop {string} containerClassName - The class attached to the mentions view container.
  * @prop {regexp} matcher - The regular expression used to trigger Mentions#search
  * @prop {string} mentionClass - Prefixed with `ql-` for now because of how quill handles custom formats. The class given to inserted mention. 
+ * @prop {string} noMatchMessage - A message to display 
  * @prop {number} offset - I forogt where this is even used. Probably has to do with calculating position of popover.
- * @prop {string}
  * @prop {string} template - A template for the popover, into which possible choices are inserted. 
  */
 var defaults = {
@@ -27,6 +27,8 @@ var defaults = {
     hideMargin: '-10000px',
     matcher: /@\w+$/i,
     mentionClass: "mention-item",
+    noMatchMessage: "Ruh roh raggy!",
+    noMatchTemplate: "<li class='no-match'><i>{{message}}</i></li>",
     offset: 10,
     template: '<ul>{{choices}}</ul>',
 };

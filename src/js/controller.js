@@ -9,10 +9,9 @@ module.exports = function addController(QuillMentions) {
         }
         else {
             // render helpful message about nothing matching so far...
-            this.render(this.noMatchFound);
+            this.render(this.noMatchHTML);
         }
     };
-
 
     /**
      * Adds markup to template and puts it inside the container.

@@ -10,10 +10,9 @@ module.exports = function addController(QuillMentions) {
         }
         else {
             // render helpful message about nothing matching so far...
-            this.render(this.noMatchFound);
+            this.render(this.noMatchHTML);
         }
     };
-
 
     /**
      * Adds markup to template and puts it inside the container.
@@ -28,6 +27,7 @@ module.exports = function addController(QuillMentions) {
     };
 
     /**
+     * Maps the current array of possible choices to one long string of HTML.
      * @method
      * @private
      */
@@ -38,8 +38,8 @@ module.exports = function addController(QuillMentions) {
                 .join("");
     };
 
-
     /**
+     * Replaces the {{choice}} and {{data}} fields in a template.
      * @method
      * @private
      */
@@ -53,6 +53,7 @@ module.exports = function addController(QuillMentions) {
     };
 
     /**
+     * Returns whether or not there are any choices to display.
      * @method
      * @private
      */
@@ -77,8 +78,8 @@ var extend = require("../utilities/extend"),
  * @prop {string} containerClassName - The class attached to the mentions view container.
  * @prop {regexp} matcher - The regular expression used to trigger Mentions#search
  * @prop {string} mentionClass - Prefixed with `ql-` for now because of how quill handles custom formats. The class given to inserted mention. 
+ * @prop {string} noMatchMessage - A message to display 
  * @prop {number} offset - I forogt where this is even used. Probably has to do with calculating position of popover.
- * @prop {string}
  * @prop {string} template - A template for the popover, into which possible choices are inserted. 
  */
 var defaults = {
@@ -90,6 +91,8 @@ var defaults = {
     hideMargin: '-10000px',
     matcher: /@\w+$/i,
     mentionClass: "mention-item",
+    noMatchMessage: "Ruh roh raggy!",
+    noMatchTemplate: "<li class='no-match'><i>{{message}}</i></li>",
     offset: 10,
     template: '<ul>{{choices}}</ul>',
 };
@@ -169,6 +172,28 @@ function QuillMentions(quill, options) {
     this.hide();
     this.addFormat(); // adds custom format for mentions
     this.addListeners();
+
+    // TODO - (re)move this. just putting it here as a reminder...
+    this.hotKeys = {
+        38: [
+            { // up arrow
+                callback: function() {
+    
+                },
+                key: 38,
+                metaKey: false,
+            },
+            ],
+        40: [
+            { // down arrow
+                callback: function() {
+    
+                },
+                key: 40,
+                metaKey: false,
+            },
+            ],
+    };
 }
 
 /**
@@ -245,6 +270,7 @@ QuillMentions.prototype.addMentionHandler = function addMentionHandler(e) {
 
 
 },{"./controller":1,"./defaults/defaults":2,"./format":3,"./search":6,"./view":11}],6:[function(require,module,exports){
+// TODO - rename to "model"
 var loadJSON = require("./utilities/ajax").loadJSON;
 /**
  * @callback searchCallback
@@ -492,16 +518,16 @@ module.exports = function addView(QuillMentions) {
 
 
     /**
-     * Return the "no matches found" template string
+     * Render and return the "no matches found" template string
      * @getter
      * @private
      * @return {string}
      */
-    Object.defineProperty(QuillMentions.prototype, "noMatchFound", {
+    Object.defineProperty(QuillMentions.prototype, "noMatchHTML", {
         get: function() {
-            var notFound = "<li class='no-match'><i>Ruh roh raggy!</i></li>",
-                template = this.options.template;
-            return template.replace("{{choices}}", notFound);
+            var template = this.options.noMatchTemplate,
+                notFound = this.options.noMatchMessage;
+            return template.replace("{{message}}", notFound);
         }
     });
 

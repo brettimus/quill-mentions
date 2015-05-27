@@ -84,16 +84,16 @@ module.exports = function addView(QuillMentions) {
 
 
     /**
-     * Return the "no matches found" template string
+     * Render and return the "no matches found" template string
      * @getter
      * @private
      * @return {string}
      */
-    Object.defineProperty(QuillMentions.prototype, "noMatchFound", {
+    Object.defineProperty(QuillMentions.prototype, "noMatchHTML", {
         get: function() {
-            var notFound = "<li class='no-match'><i>Ruh roh raggy!</i></li>",
-                template = this.options.template;
-            return template.replace("{{choices}}", notFound);
+            var template = this.options.noMatchTemplate,
+                notFound = this.options.noMatchMessage;
+            return template.replace("{{message}}", notFound);
         }
     });
 
