@@ -12,14 +12,11 @@ var extend = require("../utilities/extend"),
  * @prop {object[]} choices - A static array of possible choices. Ignored if `ajax` is truthy.
  * @prop {string} choiceTemplate - A string used as a template for possible choices.
  * @prop {string} containerClassName - The class attached to the mentions view container.
- * @prop {Function} format - Function used by a Controller instance to munge data into expected form. 
- * @prop {RegExp} matcher - The regular expression used to trigger Controller#search
+ * @prop {regexp} matcher - The regular expression used to trigger Mentions#search
  * @prop {string} mentionClass - Prefixed with `ql-` for now because of how quill handles custom formats. The class given to inserted mention. 
  * @prop {string} noMatchMessage - A message to display 
- * @prop {string} noMatchTemplate - A template in which to display error message
- * @prop {number} [[NYI]] Amount of padding to place on top of the popover. 
- * @prop {string} template - A template for the popover, into which possible choices are inserted.
- * @prop {string} triggerSymbol - Symbol that triggers the mentioning state.
+ * @prop {number} offset - I forogt where this is even used. Probably has to do with calculating position of popover.
+ * @prop {string} template - A template for the popover, into which possible choices are inserted. 
  */
 var defaults = {
     ajax: false,
@@ -28,11 +25,12 @@ var defaults = {
     choiceTemplate: "<li data-mention=\"{{data}}\">{{choice}}</li>",
     containerClassName: "ql-mentions",
     format: identity,
+    hideMargin: '-10000px',
     matcher: /@\w+$/i,
     mentionClass: "mention-item",
     noMatchMessage: "Ruh Roh Raggy!",
     noMatchTemplate: "<li class='ql-mention-choice-no-match'><i>{{message}}</i></li>",
-    paddingTop: 10,
+    offset: 10,
     template: '<ul>{{choices}}</ul>',
     triggerSymbol: "@",
 };
@@ -50,8 +48,7 @@ var ajaxDefaults = {
 };
 
 /**
- * Returns a configuration object for QuillMentions constructor.
- * @name defaultFactory
+ * Returns a configuration object for Mentions constructor.
  */
 function defaultFactory(options) {
     var result = extend({}, defaults, options);
@@ -60,4 +57,5 @@ function defaultFactory(options) {
     }
     return result;
 }
+
 module.exports = defaultFactory;

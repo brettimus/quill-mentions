@@ -1,5 +1,3 @@
-
-
 var DOM = require("./utilities/dom"),
     addClass = DOM.addClass,
     removeClass = DOM.removeClass;
@@ -11,13 +9,6 @@ var SELECTED_CLASS = "ql-mention-choice-selected";
  * @namespace
  * @prop {function} 
  */
- /**
-  * @namespace
-  * @prop {Number} 13 - Handler for the enter key.
-  * @prop {Number} 27 - Handler for the escape key.
-  * @prop {Number} 38 - Handler for the up arrow key.
-  * @prop {Number} 40 - Handler for the down arrow key.
-  */
 var KEYS = {
     13: handleEnter,
     27: handleEscape,
