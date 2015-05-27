@@ -1,6 +1,6 @@
 {
   "name": "quill-mentions",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "a module for integrating at-style mentions into quill.js",
   "keywords": [
     "quill",
