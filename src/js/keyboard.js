@@ -53,7 +53,7 @@ function handleEnter() {
         currNode;
 
     if (currIndex === -1) return;
-    nodes = this.view.container.querySelectorAll("li");
+    nodes = this.container.querySelectorAll("li");
     if (nodes.length === 0) return;
     currNode = nodes[currIndex];
     this.addMention(currNode);
@@ -83,7 +83,7 @@ function _moveSelection(steps) {
         nextIndex,
         nextNode;
 
-    nodes = this.view.container.querySelectorAll("li");
+    nodes = this.container.querySelectorAll("li");
 
     if (nodes.length === 0) {
         this.selectedChoiceIndex = -1;

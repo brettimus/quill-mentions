@@ -25,94 +25,75 @@
     
     <section>
         <article>
-            <pre class="prettyprint source"><code>// TODO - factor out data munging into separate object
+            <pre class="prettyprint source"><code>module.exports = function addController(QuillMentions) {
 
-/** @module controller */
+    /**
+     * TODO - this should simply pass data to the view and let it sort shit out.
+     * @method
+     */
+    QuillMentions.prototype.renderCurrentChoices = function renderCurrentChoices() {
+        var noMatchFoundMessage;
+        if (this.hasChoices()) {
+            this.render(this._getChoicesHTML());
+        }
+        else {
+            // render helpful message about nothing matching so far...
+            noMatchFoundMessage = this.noMatchHTML;
+            if (noMatchFoundMessage) {
+                this.render(noMatchFoundMessage);
+            } else {
+                this.hide();
+            }
+        }
+    };
 
-var loadJSON = require("./utilities/ajax").loadJSON,
-    escapeRegExp = require("./utilities/regexp").escapeRegExp;
+    /**
+     * Adds markup to template and puts it inside the container.
+     * @method
+     * @private
+     */
+    QuillMentions.prototype.render = function(choices) {
+        var template = this.options.template,
+            result   = template.replace("{{choices}}", choices);
 
-module.exports = {
-    Controller: Controller,
-    AJAXController: AJAXController,
-};
+        this.container.innerHTML = result;
+    };
 
-/**
- * @callback searchCallback
- * @param {Object[]} data - An array of objects that represent possible matches to data. The data are mapped over a formatter to provide a consistent interface.
- */
+    /**
+     * Maps the current array of possible choices to one long string of HTML.
+     * @method
+     * @private
+     */
+    QuillMentions.prototype._getChoicesHTML = function() {
+        return this
+                .currentChoices
+                .map(this._renderChoice, this)
+                .join("");
+    };
 
+    /**
+     * Replaces the {{choice}} and {{data}} fields in a template.
+     * @method
+     * @private
+     */
+    QuillMentions.prototype._renderChoice = function(choice) {
+        var template = this.options.choiceTemplate,
+            result;
+        result = template
+                    .replace("{{choice}}", choice.name)
+                    .replace("{{data}}", choice.data);
+        return result;
+    };
 
-/**
- * @constructor
- */
-function Controller(formatter, view, options) {
-    this.format = formatter;
-    this.view = view;
-    this.data = options.data;
-    this.max = options.max;
-}
-
-/**
- * Looks for match to the qry in the given data.
- * @method
- * @param {string} qry
- * @param {searchCallback} callback - Probably unnecessary...
- */
-Controller.prototype.search = function search(qry, callback) {
-    var data = this.data.filter(function(d) {
-        var qryRE = new RegExp(escapeRegExp(qry), "i");
-        return qryRE.test(d.name);
-    });
-
-    this.view.render(data.slice(0, this.max)); // IDEA TODO - just don't render if there's no data & no error template
-    if (callback) callback();
-};
-
-
-/**
- * @constructor
- * @augments Controller
- * @param {Function} formatter - munges callback data
- * @param {View} view
- * @param {Object} options
- */
-function AJAXController(formatter, view, options) {
-    this.path = options.path;
-    this.queryParameter = options.queryParameter;
-    this._latestCall = null;
-}
-AJAXController.prototype = Object.create(Controller.prototype);
-
-/**
- * @method
- * @param {String} qry
- * @param {searchCallback} callback - Callback that handles returned JSON data
- */
-AJAXController.prototype.search = function search(qry, callback) {
-
-    if (this._latestCall) this.latest.abort();  // caches ajax calls so we can cancel them as the input is updated
-    var qryString = this.path +
-                     "?" + this.queryParameter +
-                     "=" + encodeURIComponent(qry);
-
-    this._latestCall = loadJSON(qryString, this._callback.bind(this), ajaxError);
-};
-
-/**
- * Munges the callback data
- * @method
- * @private
- * @param {array} data
- */
-AJAXController.prototype._callback = function(data) {
-    data = data.slice(0, this.max);
-    this.view.render(data.map(this.formatter));
-};
-
-function ajaxError(error) {
-    console.log("Loading json errored! Likely due to aborted request, but there's the error: ", error);
-}</code></pre>
+    /**
+     * Returns whether or not there are any choices to display.
+     * @method
+     * @private
+     */
+    QuillMentions.prototype.hasChoices = function() {
+        return this.currentChoices && this.currentChoices.length;
+    };
+};</code></pre>
         </article>
     </section>
 
@@ -122,13 +103,13 @@ function ajaxError(error) {
 </div>
 
 <nav>
-    <h2><a href="index.html">Index</a></h2><h3>Modules</h3><ul><li><a href="module-controller.html">controller</a></li><li><a href="defaults.html">defaults/defaults</a></li><li><a href="module-mentions.html">mentions</a></li><li><a href="ajax.html">utilities/ajax</a></li><li><a href="extend.html">utilities/extend</a></li><li><a href="identity.html">utilities/identity</a></li></ul><h3>Classes</h3><ul><li><a href="module-controller-AJAXController.html">AJAXController</a></li><li><a href="module-controller-Controller.html">Controller</a></li><li><a href="module-mentions-QuillMentions.html">QuillMentions</a></li><li><a href="View.html">View</a></li></ul><h3>Namespaces</h3><ul><li><a href="KEYS.html">KEYS</a></li><li><a href="defaults-ajaxDefaults.html">ajaxDefaults</a></li><li><a href="defaults-defaults.html">defaults</a></li></ul><h3>Global</h3><ul><li><a href="global.html#_moveSelection">_moveSelection</a></li><li><a href="global.html#defaultFactory">defaultFactory</a></li><li><a href="global.html#extend">extend</a></li><li><a href="global.html#extendHelper">extendHelper</a></li><li><a href="global.html#handleDownKey">handleDownKey</a></li><li><a href="global.html#handleEnter">handleEnter</a></li><li><a href="global.html#handleEscape">handleEscape</a></li><li><a href="global.html#handleUpKey">handleUpKey</a></li><li><a href="global.html#identity">identity</a></li><li><a href="global.html#loadJSON">loadJSON</a></li></ul>
+    <h2><a href="index.html">Index</a></h2><h3>Modules</h3><ul><li><a href="defaults.html">defaults/defaults</a></li><li><a href="ajax.html">utilities/ajax</a></li><li><a href="extend.html">utilities/extend</a></li><li><a href="identity.html">utilities/identity</a></li></ul><h3>Classes</h3><ul><li><a href="QuillMentions.html">QuillMentions</a></li></ul><h3>Namespaces</h3><ul><li><a href="KEYS.html">KEYS</a></li><li><a href="defaults-ajaxDefaults.html">ajaxDefaults</a></li><li><a href="defaults-defaults.html">defaults</a></li></ul><h3>Global</h3><ul><li><a href="global.html#_moveSelection">_moveSelection</a></li><li><a href="global.html#extend">extend</a></li><li><a href="global.html#extendHelper">extendHelper</a></li><li><a href="global.html#handleDownKey">handleDownKey</a></li><li><a href="global.html#handleEnter">handleEnter</a></li><li><a href="global.html#handleEscape">handleEscape</a></li><li><a href="global.html#handleUpKey">handleUpKey</a></li><li><a href="global.html#identity">identity</a></li><li><a href="global.html#loadJSON">loadJSON</a></li></ul>
 </nav>
 
 <br clear="both">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.2.2</a> on Wed May 27 2015 05:56:12 GMT-0700 (PDT)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.2.2</a> on Wed May 27 2015 01:38:34 GMT-0700 (PDT)
 </footer>
 
 <script> prettyPrint(); </script>

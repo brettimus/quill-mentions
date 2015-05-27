@@ -25,23 +25,21 @@ function QuillMentions(quill, options) {
     var modOptions = defaultFactory(options),
         container = this.quill.addContainer(modOptions.containerClassName);
 
-    this.triggerSymbol = modOptions.triggerSymbol;
-    this.matcher = modOptions.matcher;
-    this.isMentioning = false;
-    this.currentMention = null;
-
-    this.selectedChoiceIndex = -1;
-
-    // this.container = container; // [TODO] see if we can destroy this reference. right now KEYs depends on it
+    this.container = container; // TODO see if we can destroy this reference
 
     this.setView(container, modOptions)
         .setController(modOptions)
-        .listenTextChange(quill)
-        .listenSelectionChange(quill)
-        .listenHotKeys(quill)
+        .listenTextChange(this.quill)
+        .listenSelectionChange(this.quill)
+        .listenHotKeys(this.quill.container)
         .listenClick(container)
         .addFormat();
 
+    this.matcher = this.modOptions.matcher;
+    this.isMentioning = false;
+
+    this.currentMention = null;
+    this.selectedChoiceIndex = -1;
 }
 
 /**
@@ -52,7 +50,7 @@ function QuillMentions(quill, options) {
  * @param {Object} options - Configuration for the view
  */
 QuillMentions.prototype.setView = function(container, options) {
-    var templates = {};
+    var templates;
     templates.list = options.template;
     templates.listItem = options.choiceTemplate;
     templates.error = options.noMatchTemplate;
@@ -104,10 +102,10 @@ QuillMentions.prototype.listenTextChange = function listenTextChange(quill) {
             _this = this;
             this.isMentioning = true;
             this.currentMention = mention;
-            query = mention[0].replace(this.triggerSymbol, "");
+            query = mention[0].replace(this.options.triggerSymbol, "");
 
             this.controller.search(query, function() {
-                _this.view.show(_this.quill);
+                _this.view.show();
             });
         }
         else {
@@ -132,7 +130,7 @@ QuillMentions.prototype.listenSelectionChange = function(quill) {
     quill.on(eventName, selectionChangeHandler.bind(this));
     return this;
 
-    function selectionChangeHandler(range) {
+    function selectionChangeHandler() {
         if (!range) {
             this.view.hide();
             quill.setSelection(null);
@@ -146,8 +144,8 @@ QuillMentions.prototype.listenSelectionChange = function(quill) {
  * @method
  * @param {Quill} quill - An instance of Quill
  */
-QuillMentions.prototype.listenHotKeys = function(quill) {
-    quill.container
+QuillMentions.prototype.listenHotKeys = function(container) {
+    container
         .addEventListener('keyup',
                            keyboardHandler.bind(this),
                            false); // TIL keypress is intended for keys that normally produce a character
@@ -155,11 +153,11 @@ QuillMentions.prototype.listenHotKeys = function(quill) {
 
     function keyboardHandler(event) {
         var code = event.keyCode || event.which;
-        if (this.isMentioning || code === 13) { // need special logic for enter key :sob:
+        if (this.isMentioning() || code === 13) { // need special logic for enter key :sob:
             console.log("We are mentioning!");
-            dispatch.call(this, code);
-            event.stopPropagation();
-            event.preventDefault();
+            dispatch(code);
+            e.stopPropagation();
+            e.preventDefault();
         }
     }
 
@@ -177,7 +175,7 @@ QuillMentions.prototype.listenHotKeys = function(quill) {
  * @method
  * @param {HTMLElement} elt
  */
-QuillMentions.prototype.listenClick = function(elt) {
+Quill.prototype.listenClick = function(elt) {
 
     elt.addEventListener("click", addMention.bind(this));
     elt.addEventListener("touchend", addMention.bind(this));

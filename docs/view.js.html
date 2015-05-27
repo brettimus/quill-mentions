@@ -26,184 +26,108 @@
     <section>
         <article>
             <pre class="prettyprint source"><code>var DOM = require("./utilities/dom"),
-    extend = require("./utilities/extend");
+    addClass = DOM.addClass,
+    removeClass = DOM.removeClass,
+    getOlderSiblingsInclusive = DOM.getOlderSiblingsInclusive;
 
-module.exports = View;
-
-
-/**
- * @constructor
- * @param {HTMLElement} container
- * @param {Object} templates - a set of templates into which we render munged data
- * @param {Object} options
- */
-function View(container, templates, options) {
-    this.container = container;
-    this.templates = extend({}, templates);
-    this.options = options || {}; // TODO - use Object.assign polyfill
-}
-
-/**
- * Creates view from data and calls View`_renderSuccess. If there are no data, calls View~_renderError.
- * @method
- * @param {array} data
- */
-View.prototype.render = function(data) {
-    var items,
-        toRender;
-    if (!data || !data.length) {
-        toRender = this.templates.listItem.replace("{{choices}}", this.error);
-        return this._renderError();
-    }
-
-    items = data.map(this._renderLI);
-    toRender = this.templates.list.replace("{{choices}}", items);
-    return this._renderSucess(toRender);
-};
-
-/**
- * Renders list item data to the list item template
- * @method
- * @param {array} data
- */
-View.prototype._renderSucess = function(html) {
-    this.container.innerHTML = html;
-    return this;
-};
-
-/**
- * Renders the error template
- * @method
- * @param {string} error - Message to paste into the popover (most likely html, but text works too!)
- */
-View.prototype._renderError = function(error) {
-    this.container.innerHTML = error;
-    return this;
-};
+module.exports = function addView(QuillMentions) {
 
 
-/**
- * Renders a datump into a listItem template
- * @method
- * @private
- * @param {string} error - Message to paste into the popover (most likely html, but text works too!)
- */
-View.prototype._renderLI = function(datum) {
-    return this.templates
-            .listItem
-            .replace("{{choice}}", datum.name) // rename
-            .replace("{{data}}", datum.data);
-};
+    /**
+     * @method
+     */
+    QuillMentions.prototype.hide = function hide() {
+        removeClass(this.container, "ql-is-mentioning");
+        this.container.style.marginTop = "0";
+        if (this.range) this.quill.setSelection(this.range);
+        this.range = null;
+    };
 
-/**
- * Makes the popover disappear
- * @method
- * @param {Quill} quill
- * @param {Object} range
- */
-View.prototype.hide = function hide(quill, range) {
-    DOM.removeClass(this.container, "ql-is-mentioning");
-    this.container.style.marginTop = "0";
-    if (range) quill.setSelection(range);
-    return this;
-};
+    /**
+     * @method
+     * @param {Object} reference
+     */
+    QuillMentions.prototype.show = function show(reference) {
 
-/**
- * Returns whether the popover has disappeared. This method could probably live elsewhere? Maybe? Or serve a more narrow purpose.
- * @method
- * @returns {boolean}
- */
-View.prototype.isHidden = function isHidden() {
-    return DOM.hasClass(this.container, "ql-is-mentioning");
-};
-
-/**
- * Adds an active class to the mentions popover and sits it beneath the cursor.
- * [TODO - add active class to config]
- * @method
- * @param {Quill} quill
- */
-View.prototype.show = function show(quill) {
-
-    this.container.style.marginTop = this._getNegativeMargin(quill);
-    DOM.addClass(this.container, "ql-is-mentioning"); // TODO - config active class
-    this.container.focus();
-
-    return this;
-};
-
-/**
- * Return an array of dom nodes corresponding to all lines at or before the line corresponding to the current range.
- * @method
- * @private
- * @param {Range} range
- * @return {Node[]}
- */
-View.prototype._findOffsetLines = function(range) {
-    var node = this._findMentionNode(range);
-    return DOM.getOlderSiblingsInclusive(node);
-};
-
-/**
- * Return the DOM node that encloses the line on which current mention is being typed.
- * @method
- * @private
- * @param {Range} range
- * @return {Node|null}
- */
-View.prototype._findMentionNode = function _findMentionNode(quill) {
-    var leafAndOffset,
-        leaf,
-        offset,
-        node;
-
-    leafAndOffset = quill.editor.doc.findLeafAt(range.start, true);
-    leaf = leafAndOffset[0];
-    offset = leafAndOffset[1]; // how many chars in front of current range
-    if (leaf) node = leaf.node;
-    while (node) {
-        if (node.tagName === "DIV") break;
-        node = node.parentNode;
-    }
-    if (!node) return null;
-    return node;
-};
-
-/**
- * @method
- * @private
- */
-View.prototype._getNegativeMargin = function(quill) {
-    var qlEditor = quill.editor.root,
-        qlLines,
-        paddingTop = this.paddingTop || 10, // TODO
-        negMargin = -paddingTop,
-        range;
-
-    range = quill.getSelection();
-    qlLines = this._findOffsetLines(range);
-
-    negMargin += this._nodeHeight(qlEditor);
-    negMargin -= qlLines.reduce(function(total, line) {
-        return total + this._nodeHeight(line);
-    }.bind(this), 0);
-
-    return "-" + negMargin + "px";
-};
-
-/**
- * @method
- * @private
- */
-View.prototype._nodeHeight = function(node) {
-    return node.getBoundingClientRect().height;
-};
+        var qlContainer = this.quill.container,
+            qlEditor = this.quill.editor.root,
+            qlLines,
+            paddingTop = 10,
+            negMargin = -paddingTop;
 
 
-// TODO - write QuillEditor View
-function QuillEditorView() {
-    throw new Error("NYI");
-}</code></pre>
+        this.range = this.quill.getSelection();
+        qlLines = this._findOffsetLines(this.range);
+
+        negMargin += qlEditor.getBoundingClientRect().height;
+        negMargin -= qlLines.reduce(function(total, line) {
+            return total + line.getBoundingClientRect().height;
+        }, 0);
+
+        this.container.style.marginTop = "-"+negMargin+'px';
+        addClass(this.container, "ql-is-mentioning");
+
+        // add keyboard listeners?
+        // or have keyboard listeners filter action based on "ql-is-mentioning";
+
+        this.container.focus(); // has no effect...
+    };
+
+
+    /**
+     * Return the DOM node that encloses the line on which current mention is being typed.
+     * @method
+     * @private
+     * @param {Range} range
+     * @return {Node|null}
+     */
+    QuillMentions.prototype._findMentionNode = function _findMentionNode(range) {
+        var leafAndOffset,
+            leaf,
+            offset,
+            node;
+
+        leafAndOffset = this.quill.editor.doc.findLeafAt(range.start, true);
+        leaf = leafAndOffset[0];
+        offset = leafAndOffset[1]; // how many chars in front of current range
+        if (leaf) node = leaf.node;
+        while (node) {
+            if (node.tagName === "DIV") break;
+            node = node.parentNode;
+        }
+        if (!node) return null;
+        return node;
+    };
+
+    /**
+     * Return an array of dom nodes corresponding to all lines at or before the line corresponding to the current range.
+     * @method
+     * @private
+     * @param {Range} range
+     * @return {Node[]}
+     */
+    QuillMentions.prototype._findOffsetLines = function(range) {
+        var node = this._findMentionNode(range);
+        return getOlderSiblingsInclusive(node);
+    };
+
+
+    /**
+     * Render and return the "no matches found" template string
+     * @getter
+     * @private
+     * @return {string}
+     */
+    Object.defineProperty(QuillMentions.prototype, "noMatchHTML", {
+        get: function() {
+            var template = this.options.noMatchTemplate,
+                message = this.options.noMatchMessage;
+
+            return message ? template.replace("{{message}}", message) : null;
+        }
+    });
+
+};</code></pre>
         </article>
     </section>
 
@@ -213,13 +137,13 @@ function QuillEditorView() {
 </div>
 
 <nav>
-    <h2><a href="index.html">Index</a></h2><h3>Modules</h3><ul><li><a href="module-controller.html">controller</a></li><li><a href="defaults.html">defaults/defaults</a></li><li><a href="module-mentions.html">mentions</a></li><li><a href="ajax.html">utilities/ajax</a></li><li><a href="extend.html">utilities/extend</a></li><li><a href="identity.html">utilities/identity</a></li></ul><h3>Classes</h3><ul><li><a href="module-controller-AJAXController.html">AJAXController</a></li><li><a href="module-controller-Controller.html">Controller</a></li><li><a href="module-mentions-QuillMentions.html">QuillMentions</a></li><li><a href="View.html">View</a></li></ul><h3>Namespaces</h3><ul><li><a href="KEYS.html">KEYS</a></li><li><a href="defaults-ajaxDefaults.html">ajaxDefaults</a></li><li><a href="defaults-defaults.html">defaults</a></li></ul><h3>Global</h3><ul><li><a href="global.html#_moveSelection">_moveSelection</a></li><li><a href="global.html#defaultFactory">defaultFactory</a></li><li><a href="global.html#extend">extend</a></li><li><a href="global.html#extendHelper">extendHelper</a></li><li><a href="global.html#handleDownKey">handleDownKey</a></li><li><a href="global.html#handleEnter">handleEnter</a></li><li><a href="global.html#handleEscape">handleEscape</a></li><li><a href="global.html#handleUpKey">handleUpKey</a></li><li><a href="global.html#identity">identity</a></li><li><a href="global.html#loadJSON">loadJSON</a></li></ul>
+    <h2><a href="index.html">Index</a></h2><h3>Modules</h3><ul><li><a href="defaults.html">defaults/defaults</a></li><li><a href="ajax.html">utilities/ajax</a></li><li><a href="extend.html">utilities/extend</a></li><li><a href="identity.html">utilities/identity</a></li></ul><h3>Classes</h3><ul><li><a href="QuillMentions.html">QuillMentions</a></li></ul><h3>Namespaces</h3><ul><li><a href="KEYS.html">KEYS</a></li><li><a href="defaults-ajaxDefaults.html">ajaxDefaults</a></li><li><a href="defaults-defaults.html">defaults</a></li></ul><h3>Global</h3><ul><li><a href="global.html#_moveSelection">_moveSelection</a></li><li><a href="global.html#extend">extend</a></li><li><a href="global.html#extendHelper">extendHelper</a></li><li><a href="global.html#handleDownKey">handleDownKey</a></li><li><a href="global.html#handleEnter">handleEnter</a></li><li><a href="global.html#handleEscape">handleEscape</a></li><li><a href="global.html#handleUpKey">handleUpKey</a></li><li><a href="global.html#identity">identity</a></li><li><a href="global.html#loadJSON">loadJSON</a></li></ul>
 </nav>
 
 <br clear="both">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.2.2</a> on Wed May 27 2015 05:56:12 GMT-0700 (PDT)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.2.2</a> on Wed May 27 2015 01:38:34 GMT-0700 (PDT)
 </footer>
 
 <script> prettyPrint(); </script>
