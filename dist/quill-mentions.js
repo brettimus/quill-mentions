@@ -401,7 +401,6 @@ QuillMentions.prototype.addMentionHandler = function addMentionHandler(e) {
      this.quill.insertText(insertAt, toInsert, "mention", this.options.mentionClass);
      this.quill.insertText(insertAt + toInsert.length, " ");
      this.quill.setSelection(toFocus, toFocus);
-     e.stopPropagation();
  };
 
 /**
