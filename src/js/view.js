@@ -29,7 +29,7 @@ View.prototype.render = function(data) {
         return this._renderError();
     }
 
-    items = data.map(this._renderLI);
+    items = data.map(this._renderLI, this);
     toRender = this.templates.list.replace("{{choices}}", items);
     return this._renderSucess(toRender);
 };
@@ -112,8 +112,8 @@ View.prototype.show = function show(quill) {
  * @param {Range} range
  * @return {Node[]}
  */
-View.prototype._findOffsetLines = function(range) {
-    var node = this._findMentionNode(range);
+View.prototype._findOffsetLines = function(quill) {
+    var node = this._findMentionNode(quill);
     return DOM.getOlderSiblingsInclusive(node);
 };
 
@@ -125,11 +125,13 @@ View.prototype._findOffsetLines = function(range) {
  * @return {Node|null}
  */
 View.prototype._findMentionNode = function _findMentionNode(quill) {
-    var leafAndOffset,
+    var range = quill.getSelection(),
+        leafAndOffset,
         leaf,
         offset,
         node;
-
+       
+                
     leafAndOffset = quill.editor.doc.findLeafAt(range.start, true);
     leaf = leafAndOffset[0];
     offset = leafAndOffset[1]; // how many chars in front of current range
@@ -153,8 +155,7 @@ View.prototype._getNegativeMargin = function(quill) {
         negMargin = -paddingTop,
         range;
 
-    range = quill.getSelection();
-    qlLines = this._findOffsetLines(range);
+    qlLines = this._findOffsetLines(quill);
 
     negMargin += this._nodeHeight(qlEditor);
     negMargin -= qlLines.reduce(function(total, line) {

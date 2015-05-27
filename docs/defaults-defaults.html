@@ -59,6 +59,8 @@
 		<th>Type</th>
 		
 		
+		<th>Argument</th>
+		
 		
 		
 		
@@ -84,6 +86,12 @@
             </td>
             
             
+                <td class="attributes">
+                
+                    
+                
+                </td>
+            
             
             
             
@@ -106,6 +114,12 @@
             
             </td>
             
+            
+                <td class="attributes">
+                
+                    
+                
+                </td>
             
             
             
@@ -130,6 +144,12 @@
             </td>
             
             
+                <td class="attributes">
+                
+                    
+                
+                </td>
+            
             
             
             
@@ -152,6 +172,12 @@
             
             </td>
             
+            
+                <td class="attributes">
+                
+                    
+                
+                </td>
             
             
             
@@ -176,10 +202,45 @@
             </td>
             
             
+                <td class="attributes">
+                
+                    
+                
+                </td>
+            
             
             
             
             <td class="description last">The class attached to the mentions view container.</td>
+        </tr>
+	
+	
+	
+        <tr>
+            
+                <td class="name"><code>format</code></td>
+            
+            
+            <td class="type">
+            
+                
+<span class="param-type">function</span>
+
+
+            
+            </td>
+            
+            
+                <td class="attributes">
+                
+                    
+                
+                </td>
+            
+            
+            
+            
+            <td class="description last">Function used by a Controller instance to munge data into expected form.</td>
         </tr>
 	
 	
@@ -192,17 +253,23 @@
             <td class="type">
             
                 
-<span class="param-type">regexp</span>
+<span class="param-type">RegExp</span>
 
 
             
             </td>
             
             
+                <td class="attributes">
+                
+                    
+                
+                </td>
             
             
             
-            <td class="description last">The regular expression used to trigger Mentions#search</td>
+            
+            <td class="description last">The regular expression used to trigger Controller#search</td>
         </tr>
 	
 	
@@ -221,6 +288,12 @@
             
             </td>
             
+            
+                <td class="attributes">
+                
+                    
+                
+                </td>
             
             
             
@@ -245,6 +318,12 @@
             </td>
             
             
+                <td class="attributes">
+                
+                    
+                
+                </td>
+            
             
             
             
@@ -255,7 +334,36 @@
 	
         <tr>
             
-                <td class="name"><code>offset</code></td>
+                <td class="name"><code>noMatchTemplate</code></td>
+            
+            
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+            
+            
+                <td class="attributes">
+                
+                    
+                
+                </td>
+            
+            
+            
+            
+            <td class="description last">A template in which to display error message</td>
+        </tr>
+	
+	
+	
+        <tr>
+            
+                <td class="name"><code>[NYI]</code></td>
             
             
             <td class="type">
@@ -268,10 +376,18 @@
             </td>
             
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+                    
+                
+                </td>
             
             
             
-            <td class="description last">I forogt where this is even used. Probably has to do with calculating position of popover.</td>
+            
+            <td class="description last">Amount of padding to place on top of the popover.</td>
         </tr>
 	
 	
@@ -291,10 +407,45 @@
             </td>
             
             
+                <td class="attributes">
+                
+                    
+                
+                </td>
+            
             
             
             
             <td class="description last">A template for the popover, into which possible choices are inserted.</td>
+        </tr>
+	
+	
+	
+        <tr>
+            
+                <td class="name"><code>triggerSymbol</code></td>
+            
+            
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+            
+            
+                <td class="attributes">
+                
+                    
+                
+                </td>
+            
+            
+            
+            
+            <td class="description last">Symbol that triggers the mentioning state.</td>
         </tr>
 	
 	
@@ -322,7 +473,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="defaults.js.html">defaults/defaults.js</a>, <a href="defaults.js.html#line21">line 21</a>
+        <a href="defaults.js.html">defaults/defaults.js</a>, <a href="defaults.js.html#line24">line 24</a>
     </li></ul></dd>
     
     
@@ -365,13 +516,13 @@
 </div>
 
 <nav>
-    <h2><a href="index.html">Index</a></h2><h3>Modules</h3><ul><li><a href="defaults.html">defaults/defaults</a></li><li><a href="ajax.html">utilities/ajax</a></li><li><a href="extend.html">utilities/extend</a></li><li><a href="identity.html">utilities/identity</a></li></ul><h3>Classes</h3><ul><li><a href="QuillMentions.html">QuillMentions</a></li></ul><h3>Namespaces</h3><ul><li><a href="KEYS.html">KEYS</a></li><li><a href="defaults-ajaxDefaults.html">ajaxDefaults</a></li><li><a href="defaults-defaults.html">defaults</a></li></ul><h3>Global</h3><ul><li><a href="global.html#_moveSelection">_moveSelection</a></li><li><a href="global.html#extend">extend</a></li><li><a href="global.html#extendHelper">extendHelper</a></li><li><a href="global.html#handleDownKey">handleDownKey</a></li><li><a href="global.html#handleEnter">handleEnter</a></li><li><a href="global.html#handleEscape">handleEscape</a></li><li><a href="global.html#handleUpKey">handleUpKey</a></li><li><a href="global.html#identity">identity</a></li><li><a href="global.html#loadJSON">loadJSON</a></li></ul>
+    <h2><a href="index.html">Index</a></h2><h3>Modules</h3><ul><li><a href="module-controller.html">controller</a></li><li><a href="defaults.html">defaults/defaults</a></li><li><a href="module-mentions.html">mentions</a></li><li><a href="ajax.html">utilities/ajax</a></li><li><a href="extend.html">utilities/extend</a></li><li><a href="identity.html">utilities/identity</a></li></ul><h3>Classes</h3><ul><li><a href="module-controller-AJAXController.html">AJAXController</a></li><li><a href="module-controller-Controller.html">Controller</a></li><li><a href="module-mentions-QuillMentions.html">QuillMentions</a></li><li><a href="View.html">View</a></li></ul><h3>Namespaces</h3><ul><li><a href="KEYS.html">KEYS</a></li><li><a href="defaults-ajaxDefaults.html">ajaxDefaults</a></li><li><a href="defaults-defaults.html">defaults</a></li></ul><h3>Global</h3><ul><li><a href="global.html#_moveSelection">_moveSelection</a></li><li><a href="global.html#defaultFactory">defaultFactory</a></li><li><a href="global.html#extend">extend</a></li><li><a href="global.html#extendHelper">extendHelper</a></li><li><a href="global.html#handleDownKey">handleDownKey</a></li><li><a href="global.html#handleEnter">handleEnter</a></li><li><a href="global.html#handleEscape">handleEscape</a></li><li><a href="global.html#handleUpKey">handleUpKey</a></li><li><a href="global.html#identity">identity</a></li><li><a href="global.html#loadJSON">loadJSON</a></li></ul>
 </nav>
 
 <br clear="both">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.2.2</a> on Wed May 27 2015 01:38:34 GMT-0700 (PDT)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.2.2</a> on Wed May 27 2015 05:56:12 GMT-0700 (PDT)
 </footer>
 
 <script> prettyPrint(); </script>

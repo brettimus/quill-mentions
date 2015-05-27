@@ -1,74 +1,93 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-module.exports = function addController(QuillMentions) {
+// TODO - factor out data munging into separate object
 
-    /**
-     * TODO - this should simply pass data to the view and let it sort shit out.
-     * @method
-     */
-    QuillMentions.prototype.renderCurrentChoices = function renderCurrentChoices() {
-        var noMatchFoundMessage;
-        if (this.hasChoices()) {
-            this.render(this._getChoicesHTML());
-        }
-        else {
-            // render helpful message about nothing matching so far...
-            noMatchFoundMessage = this.noMatchHTML;
-            if (noMatchFoundMessage) {
-                this.render(noMatchFoundMessage);
-            } else {
-                this.hide();
-            }
-        }
-    };
+/** @module controller */
 
-    /**
-     * Adds markup to template and puts it inside the container.
-     * @method
-     * @private
-     */
-    QuillMentions.prototype.render = function(choices) {
-        var template = this.options.template,
-            result   = template.replace("{{choices}}", choices);
+var loadJSON = require("./utilities/ajax").loadJSON,
+    escapeRegExp = require("./utilities/regexp").escapeRegExp;
 
-        this.container.innerHTML = result;
-    };
-
-    /**
-     * Maps the current array of possible choices to one long string of HTML.
-     * @method
-     * @private
-     */
-    QuillMentions.prototype._getChoicesHTML = function() {
-        return this
-                .currentChoices
-                .map(this._renderChoice, this)
-                .join("");
-    };
-
-    /**
-     * Replaces the {{choice}} and {{data}} fields in a template.
-     * @method
-     * @private
-     */
-    QuillMentions.prototype._renderChoice = function(choice) {
-        var template = this.options.choiceTemplate,
-            result;
-        result = template
-                    .replace("{{choice}}", choice.name)
-                    .replace("{{data}}", choice.data);
-        return result;
-    };
-
-    /**
-     * Returns whether or not there are any choices to display.
-     * @method
-     * @private
-     */
-    QuillMentions.prototype.hasChoices = function() {
-        return this.currentChoices && this.currentChoices.length;
-    };
+module.exports = {
+    Controller: Controller,
+    AJAXController: AJAXController,
 };
-},{}],2:[function(require,module,exports){
+
+/**
+ * @callback searchCallback
+ * @param {Object[]} data - An array of objects that represent possible matches to data. The data are mapped over a formatter to provide a consistent interface.
+ */
+
+
+/**
+ * @constructor
+ */
+function Controller(formatter, view, options) {
+    this.format = formatter;
+    this.view = view;
+    this.data = options.data;
+    this.max = options.max;
+}
+
+/**
+ * Looks for match to the qry in the given data.
+ * @method
+ * @param {string} qry
+ * @param {searchCallback} callback - Probably unnecessary...
+ */
+Controller.prototype.search = function search(qry, callback) {
+    var data = this.data.filter(function(d) {
+        var qryRE = new RegExp(escapeRegExp(qry), "i");
+        return qryRE.test(d.name);
+    });
+
+    this.view.render(data.slice(0, this.max)); // IDEA TODO - just don't render if there's no data & no error template
+    if (callback) callback();
+};
+
+
+/**
+ * @constructor
+ * @augments Controller
+ * @param {Function} formatter - munges callback data
+ * @param {View} view
+ * @param {Object} options
+ */
+function AJAXController(formatter, view, options) {
+    this.path = options.path;
+    this.queryParameter = options.queryParameter;
+    this._latestCall = null;
+}
+AJAXController.prototype = Object.create(Controller.prototype);
+
+/**
+ * @method
+ * @param {String} qry
+ * @param {searchCallback} callback - Callback that handles returned JSON data
+ */
+AJAXController.prototype.search = function search(qry, callback) {
+
+    if (this._latestCall) this.latest.abort();  // caches ajax calls so we can cancel them as the input is updated
+    var qryString = this.path +
+                     "?" + this.queryParameter +
+                     "=" + encodeURIComponent(qry);
+
+    this._latestCall = loadJSON(qryString, this._callback.bind(this), ajaxError);
+};
+
+/**
+ * Munges the callback data
+ * @method
+ * @private
+ * @param {array} data
+ */
+AJAXController.prototype._callback = function(data) {
+    data = data.slice(0, this.max);
+    this.view.render(data.map(this.formatter));
+};
+
+function ajaxError(error) {
+    console.log("Loading json errored! Likely due to aborted request, but there's the error: ", error);
+}
+},{"./utilities/ajax":6,"./utilities/regexp":10}],2:[function(require,module,exports){
 /**
  * @module defaults/defaults
  */
@@ -83,11 +102,14 @@ var extend = require("../utilities/extend"),
  * @prop {object[]} choices - A static array of possible choices. Ignored if `ajax` is truthy.
  * @prop {string} choiceTemplate - A string used as a template for possible choices.
  * @prop {string} containerClassName - The class attached to the mentions view container.
- * @prop {regexp} matcher - The regular expression used to trigger Mentions#search
+ * @prop {Function} format - Function used by a Controller instance to munge data into expected form. 
+ * @prop {RegExp} matcher - The regular expression used to trigger Controller#search
  * @prop {string} mentionClass - Prefixed with `ql-` for now because of how quill handles custom formats. The class given to inserted mention. 
  * @prop {string} noMatchMessage - A message to display 
- * @prop {number} offset - I forogt where this is even used. Probably has to do with calculating position of popover.
- * @prop {string} template - A template for the popover, into which possible choices are inserted. 
+ * @prop {string} noMatchTemplate - A template in which to display error message
+ * @prop {number} [[NYI]] Amount of padding to place on top of the popover. 
+ * @prop {string} template - A template for the popover, into which possible choices are inserted.
+ * @prop {string} triggerSymbol - Symbol that triggers the mentioning state.
  */
 var defaults = {
     ajax: false,
@@ -96,12 +118,11 @@ var defaults = {
     choiceTemplate: "<li data-mention=\"{{data}}\">{{choice}}</li>",
     containerClassName: "ql-mentions",
     format: identity,
-    hideMargin: '-10000px',
     matcher: /@\w+$/i,
     mentionClass: "mention-item",
     noMatchMessage: "Ruh Roh Raggy!",
     noMatchTemplate: "<li class='ql-mention-choice-no-match'><i>{{message}}</i></li>",
-    offset: 10,
+    paddingTop: 10,
     template: '<ul>{{choices}}</ul>',
     triggerSymbol: "@",
 };
@@ -119,7 +140,8 @@ var ajaxDefaults = {
 };
 
 /**
- * Returns a configuration object for Mentions constructor.
+ * Returns a configuration object for QuillMentions constructor.
+ * @name defaultFactory
  */
 function defaultFactory(options) {
     var result = extend({}, defaults, options);
@@ -128,24 +150,14 @@ function defaultFactory(options) {
     }
     return result;
 }
-
 module.exports = defaultFactory;
-},{"../utilities/extend":10,"../utilities/identity":11}],3:[function(require,module,exports){
-module.exports = addFormat;
-
-function addFormat(QuillMentions) {
-    /**
-     * @method
-     */
-    QuillMentions.prototype.addFormat = function(className) {
-        this.quill.addFormat('mention', { tag: 'SPAN', "class": "ql-", });
-    };
-}
-},{}],4:[function(require,module,exports){
+},{"../utilities/extend":8,"../utilities/identity":9}],3:[function(require,module,exports){
 (function (global){
 global.QuillMentions = require("./mentions");
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./mentions":6}],5:[function(require,module,exports){
+},{"./mentions":5}],4:[function(require,module,exports){
+
+
 var DOM = require("./utilities/dom"),
     addClass = DOM.addClass,
     removeClass = DOM.removeClass;
@@ -157,6 +169,13 @@ var SELECTED_CLASS = "ql-mention-choice-selected";
  * @namespace
  * @prop {function} 
  */
+ /**
+  * @namespace
+  * @prop {Number} 13 - Handler for the enter key.
+  * @prop {Number} 27 - Handler for the escape key.
+  * @prop {Number} 38 - Handler for the up arrow key.
+  * @prop {Number} 40 - Handler for the down arrow key.
+  */
 var KEYS = {
     13: handleEnter,
     27: handleEscape,
@@ -192,7 +211,7 @@ function handleEnter() {
         currNode;
 
     if (currIndex === -1) return;
-    nodes = this.container.querySelectorAll("li");
+    nodes = this.view.container.querySelectorAll("li");
     if (nodes.length === 0) return;
     currNode = nodes[currIndex];
     this.addMention(currNode);
@@ -210,7 +229,7 @@ function handleEscape() {
 }
 
 /**
- * Moves the selected list item up or down. (+steps means down, -steps means up)
+ * Moves the selected list item up or down. (+steps means down, -steps means up) PUT THIS IN THE VIEW
  * @method
  * @private
  * @this {QuillMentions}
@@ -222,7 +241,7 @@ function _moveSelection(steps) {
         nextIndex,
         nextNode;
 
-    nodes = this.container.querySelectorAll("li");
+    nodes = this.view.container.querySelectorAll("li");
 
     if (nodes.length === 0) {
         this.selectedChoiceIndex = -1;
@@ -255,19 +274,16 @@ function _normalizeIndex(i, modulo) {
 }
 
 module.exports = KEYS;
-},{"./utilities/dom":9}],6:[function(require,module,exports){
-var addController = require("./controller"),
-    addFormat = require("./format"),
-    addSearch = require("./search"),
-    addView = require("./view");
+},{"./utilities/dom":7}],5:[function(require,module,exports){
+/** @module mentions */
 
-var defaultFactory = require("./defaults/defaults"),
+var AJAXController = require("./controller").AJAXController,
+    Controller = require("./controller").Controller,
+    View = require("./view");
+
+var extend = require("./utilities/extend"),
+    defaultFactory = require("./defaults/defaults"), // keep in defaults so we can write specific defaults for each object
     KEYS = require("./keyboard");
-
-addController(QuillMentions);
-addFormat(QuillMentions);
-addSearch(QuillMentions);
-addView(QuillMentions);
 
 module.exports = QuillMentions;
 
@@ -275,141 +291,201 @@ module.exports = QuillMentions;
  * @constructor
  * @param {Object} quill - An instance of `Quill`.
  * @param {Object} [options] - User configuration passed to the mentions module. It's mixed in with defaults.
- * @property {Object} quill - Instance of quill editor.
- * @property {Object} options - Default configuration mixed in with user configuration.
- * @property {Object} container - DOM node that contains the mention choices.
- * @property {Object[]|null} currentChoices - 
- * @property {Object|null} currentMention
+ * @prop {Quill} quill
+ * @prop {DOMNode} container - Container for the popover (a.k.a. the View)
+ * @prop {RegExp} matcher - Used to scan contents of editor for mentions.
+ * @prop {Bool} isMentioning - Updated with our "mentioning state" changes. 
  */
 function QuillMentions(quill, options) {
 
     this.quill = quill;
-    this.options = defaultFactory(options);
-    this.container = this.quill.addContainer(this.options.containerClassName);
-    this.currentChoices = null;
+    var modOptions = defaultFactory(options),
+        container = this.quill.addContainer(modOptions.containerClassName);
+
+    this.triggerSymbol = modOptions.triggerSymbol;
+    this.matcher = modOptions.matcher;
+    this.isMentioning = false;
     this.currentMention = null;
 
     this.selectedChoiceIndex = -1;
 
-    this.hide();
-    this.addFormat(); // adds custom format for mentions
-    this.addListeners();
+    // this.container = container; // [TODO] see if we can destroy this reference. right now KEYs depends on it
+
+    this.setView(container, modOptions)
+        .setController(modOptions)
+        .listenTextChange(quill)
+        .listenSelectionChange(quill)
+        .listenHotKeys(quill)
+        .listenClick(container)
+        .addFormat();
+
 }
 
 /**
+ * Sets QuillMentions.view to a View object
  * @method
+ * @private
+ * @param {Node} container
+ * @param {Object} options - Configuration for the view
  */
-QuillMentions.prototype.addListeners = function addListeners() {
-    var textChangeHandler = this.textChangeHandler.bind(this),
-        selectionChangeHandler = this.selectionChangeHandler.bind(this),
-        addMentionHandler = this.addMentionHandler.bind(this),
-        keyboardHandler   = this.keyboardHandler.bind(this);
-
-    this.quill.on(this.quill.constructor.events.TEXT_CHANGE, textChangeHandler);
-    this.quill.on(this.quill.constructor.events.SELECTION_CHANGE, selectionChangeHandler);
-
-    this.container.addEventListener('click', addMentionHandler, false);
-    this.container.addEventListener('touchend', addMentionHandler, false);
-
-    this.quill.container.addEventListener('keyup', keyboardHandler, false); // TIL keypress is intended for keys that normally produce a character
+QuillMentions.prototype.setView = function(container, options) {
+    var templates = {};
+    templates.list = options.template;
+    templates.listItem = options.choiceTemplate;
+    templates.error = options.noMatchTemplate;
+    this.view = new View(container, templates);
+    return this;
 };
 
 /**
+ * Sets QuillMentions.controller to a Controller or AJAXController object (depending on options).
  * @method
+ * @private
+ * @param {Object} options - Configuration for the controller.
  */
-QuillMentions.prototype.textChangeHandler = function textChangeHandler(_delta) {
-    var mention = this.findMention(),
-        queryString,
-        that;
-    if (mention) {
-        this.currentMention = mention;
-        queryString = mention[0].replace(this.options.triggerSymbol, "");
-        that = this;
-        this.search(queryString, function(data) {
-            that.currentChoices = data.slice(0, that.options.choiceMax);
-            that.renderCurrentChoices();
-            that.show();
-        });
+QuillMentions.prototype.setController = function(options) {
+    if (!this.view) throw new Error("Must set view before controller.");
+
+    var formatter,
+        config = {
+            max: options.choicesMax,
+        };
+    if (!options.ajax) {
+        formatter = options.format;
+        config.data = options.choices;
+        this.controller = new Controller(formatter, this.view, config);
+    } else {
+        formatter = options.ajax.format;
+        extend(config, options.ajax);
+        this.controller = new AJAXController(formatter, this.view, config);
     }
-    else if (this.isMentioning()) {
-        // this.currentMention = null; // DANGER HACK TODO NOOOO
-        this.range = null;   // Prevent restoring selection to last saved
-        this.hide();
+    return this;
+};
+
+/**
+ * Sets a listener for text-change events on the given Quill instance
+ * @method
+ * @param {Quill} quill - An instance of Quill
+ */
+QuillMentions.prototype.listenTextChange = function listenTextChange(quill) {
+    var eventName = this.quill.constructor.events.TEXT_CHANGE;
+    quill.on(eventName, textChangeHandler.bind(this));
+    return this;
+
+    function textChangeHandler(_) {
+        var mention = this.findMention(),
+            query,
+            _this;
+
+        if (mention) {
+            _this = this;
+            this.isMentioning = true;
+            this.currentMention = mention;
+            query = mention[0].replace(this.triggerSymbol, "");
+
+            this.controller.search(query, function() {
+                _this.view.show(_this.quill);
+            });
+        }
+        else {
+            this.isMentioning = false;
+            this.view.hide();
+            //
+            // NB - i dont' know what these do but i'm keeping them in here in case shit goes awry
+            // this.currentMention = null; // DANGER HACK TODO NOOOO
+            // this.range = null;   // Prevent restoring selection to last saved
+        }
+    }
+};
+
+
+/**
+ * Sets a listener for selection-change events on the given Quill instance
+ * @method
+ * @param {Quill} quill - An instance of Quill
+ */
+QuillMentions.prototype.listenSelectionChange = function(quill) {
+    var eventName = quill.constructor.events.SELECTION_CHANGE;
+    quill.on(eventName, selectionChangeHandler.bind(this));
+    return this;
+
+    function selectionChangeHandler(range) {
+        if (!range) {
+            this.view.hide();
+            quill.setSelection(null);
+        }
     }
 };
 
 /**
+ * Sets a listener for keyboard events on the given container.
+ * Events are dispatched through the KEYS object.
  * @method
+ * @param {Quill} quill - An instance of Quill
  */
-QuillMentions.prototype.selectionChangeHandler = function selectionChangeHandler(range) {
-    if (!range) {
-        this.hide();
-        this.quill.setSelection(null);
+QuillMentions.prototype.listenHotKeys = function(quill) {
+    quill.container
+        .addEventListener('keyup',
+                           keyboardHandler.bind(this),
+                           false); // TIL keypress is intended for keys that normally produce a character
+    return this;
+
+    function keyboardHandler(event) {
+        var code = event.keyCode || event.which;
+        if (this.isMentioning || code === 13) { // need special logic for enter key :sob:
+            console.log("We are mentioning!");
+            dispatch.call(this, code);
+            event.stopPropagation();
+            event.preventDefault();
+        }
+    }
+
+    function dispatch(code) {
+        var callback = KEYS[code];
+        if (callback) {
+            quill.setSelection(this.range); // HACK oh noz! todo bad icky
+            callback.call(this);
+        }
     }
 };
 
 /**
+ * Listens for a click or touchend event on the View.
  * @method
+ * @param {HTMLElement} elt
  */
-QuillMentions.prototype.keyboardHandler = function(e) {
-    var code = e.keyCode || e.which;
-    if (this.isMentioning() || code === 13) { // need special logic for enter key :sob:
-        console.log("We are mentioning!");
-        this._dispatchKeycode(code);
+QuillMentions.prototype.listenClick = function(elt) {
+
+    elt.addEventListener("click", addMention.bind(this));
+    elt.addEventListener("touchend", addMention.bind(this));
+    return this;
+
+    function addMention(event) {
+        var target = event.target || event.srcElement;
+        if (target.tagName.toLowerCase() === "li") { // TODO - this is bad news... but adding a pointer-event: none; to the error message list item does not work bc i'm using bubbling to capture click events in the first place and oh my garsh is this a long comment...
+            console.log(target);
+            this.addMention(target);
+        }
         e.stopPropagation();
-        e.preventDefault();
     }
 };
 
-QuillMentions.prototype._dispatchKeycode = function(code) {
-    var callback = KEYS[code];
-    if (callback) {
-        this.quill.setSelection(this.range); // HACK oh noz!
-        callback.call(this);
-    }
-};
-
-
 /**
- * @method
- */
-QuillMentions.prototype.hasSelection = function() {
-    return this.selectedChoiceIndex !== -1;
-};
-
-
-
-/**
+ * Looks for a string in the editor (up to the cursor's current position) for a match to QuillMentions~matcher
  * @method
  * @return {Match}
  */
 QuillMentions.prototype.findMention = function findMention() {
-    var contents,
-        match;
+    var cursor = this.quill.getSelection().end,
+        contents = this.quill.getText(0, cursor);
 
-    this.range = this.quill.getSelection();
-    if (!this.range) return;
-    contents = this.quill.getText(0, this.range.end);
-    match = this.options.matcher.exec(contents);
-    return match;
-};
-
-
-
-/**
- * @method
- */
-QuillMentions.prototype.addMentionHandler = function addMentionHandler(e) {
-    var target = e.target || e.srcElement;
-    if (target.tagName === "li") { // TODO - this is bad news... but adding a pointer-event: none; does not work bc i'm using bubbling...
-        console.log(target);
-        this.addMention(target);
-    }
-    e.stopPropagation();
+    return this.matcher.exec(contents);
 };
 
 /**
+ * Needs to be refactored! QuillMention should be responsible for this action.
  * @method
+ * @param {HTMLElement}
  */
  QuillMentions.prototype.addMention = function addMention(node) {
      var insertAt = this.currentMention.index,
@@ -424,90 +500,27 @@ QuillMentions.prototype.addMentionHandler = function addMentionHandler(e) {
      this.quill.setSelection(toFocus, toFocus);
  };
 
+
+ /**
+  * Refactor.
+  * @method
+  */
+ QuillMentions.prototype.hasSelection = function() {
+     return this.selectedChoiceIndex !== -1;
+ };
+
 /**
+ * Waiting on new custom formats in Quill to beef this up.
  * @method
+ * @private
  */
-QuillMentions.prototype.isMentioning = function() {
-    return this.container.className.search(/ql\-is\-mentioning/) !== -1;
-};
+ QuillMentions.prototype.addFormat = function(className) {
+     this.quill.addFormat('mention', { tag: 'SPAN', "class": "ql-", }); // a mention is a span with the class prefix "ql-". the naming is an artifact of the current custom formats implementation
+     return this;
+ };
 
 
-},{"./controller":1,"./defaults/defaults":2,"./format":3,"./keyboard":5,"./search":7,"./view":12}],7:[function(require,module,exports){
-// TODO - rename to "model"
-var loadJSON = require("./utilities/ajax").loadJSON;
-/**
- * @callback searchCallback
- * @param {Object[]} data - An array of objects that represent possible matches to data. The data are mapped over a formatter to provide a consistent interface.
- */
-
-function search(qry, callback) {
-    var searcher = this.options.ajax ? this.ajaxSearch : this.staticSearch;
-    searcher.call(this, qry, callback);
-}
-
-module.exports = function addSearch(QuillMentions) {
-    /**
-     * Dispatches search for possible matches to a query.
-     * @method 
-     * @param {string} qry
-     * @param {searchCallback} callback - Callback that handles the possible matches
-     */
-    QuillMentions.prototype.search = search;
-
-    /**
-     * @method
-     * @param {string} qry
-     * @param {searchCallback} callback - Callback that handles possible matches
-     */
-    QuillMentions.prototype.staticSearch = function staticSearch(qry, callback) {
-        console.log("Static Search Query", qry);
-        var data = this.options.choices.filter(staticFilter(qry).bind(this));
-        if (!callback) noCallbackError("staticSearch");
-        callback(data);
-    };
-
-    /**
-     * @method
-     * @param {string} qry
-     * @param {searchCallback} callback - Callback that handles possible matches
-     */
-    QuillMentions.prototype.ajaxSearch = function ajaxSearch(qry, callback) {
-        // TODO - remember last ajax request, and if it's still pending, cancel it.
-        //       ... to that end, just use promises.
-
-        if (ajaxSearch.latest) ajaxSearch.latest.abort();
-
-        var path = this.options.ajax.path,
-            formatData = this.options.ajax.format,
-            queryParameter = this.options.ajax.queryParameter,
-            qryString = path + "?" + queryParameter + "=" + encodeURIComponent(qry);
-
-        ajaxSearch.latest = loadJSON(qryString, ajaxSuccess(callback, formatData), ajaxError);
-    };
-};
-
-function staticFilter(qry) {
-    return function(choice) {
-        var formatter = this.options.format;
-        return choice.name.toLowerCase().indexOf(qry.toLowerCase()) !== -1;
-    };
-}
-
-function ajaxSuccess(callback, formatter) {
-    return function(data) {
-        if (callback) callback(data.map(formatter));
-        else noCallbackError("ajaxSearch");
-    };
-}
-
-function ajaxError(error) {
-    console.log("Loading json errored...", error);
-}
-
-function noCallbackError(functionName) {
-    console.log("Warning!", functionName, "was not provided a callback. Don't be a ding-dong.");
-}
-},{"./utilities/ajax":8}],8:[function(require,module,exports){
+},{"./controller":1,"./defaults/defaults":2,"./keyboard":4,"./utilities/extend":8,"./view":11}],6:[function(require,module,exports){
 /** @module utilities/ajax */
 module.exports = {
 
@@ -535,23 +548,15 @@ module.exports = {
         return xhr;
     },
 };
-},{}],9:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 module.exports.addClass = addClass;
-module.exports.removeClass = removeClass;
 module.exports.getOlderSiblingsInclusive = getOlderSiblingsInclusive;
+module.exports.hasClass = addClass;
+module.exports.removeClass = removeClass;
 
 function addClass(node, className) {
-    if (!node) return;
-    if (!node.className) node.className = className;
-    else if (node.className.indexOf(className) === -1) {
+    if (!hasClass(node, className)) {
         node.className += " "+className;
-    }
-}
-
-function removeClass(node, className) {
-    if (!node) return;
-    while (node.className.indexOf(className) !== -1) {
-        node.className = node.className.replace(className, "");
     }
 }
 
@@ -565,11 +570,18 @@ function getOlderSiblingsInclusive(node) {
     return result;
 }
 
-// helper
-function escapeRegExp(str) {
-  return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
+function hasClass(node, className) {
+    if (!node) return;
+    return node.className.indexOf(className) !== -1;
 }
-},{}],10:[function(require,module,exports){
+
+function removeClass(node, className) {
+    if (!hasClass(node, className)) return;
+    while (node.className.indexOf(className) !== -1) {
+        node.className = node.className.replace(className, "");
+    }
+}
+},{}],8:[function(require,module,exports){
 /**
  * Extend module
  * @module utilities/extend
@@ -608,7 +620,7 @@ function extendHelper(destination, source) {
     }
     return destination;
 }
-},{}],11:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 /** @module utilities/identity */
 
 module.exports = identity;
@@ -617,108 +629,191 @@ module.exports = identity;
 function identity(d) {
     return d;
 }
-},{}],12:[function(require,module,exports){
-var DOM = require("./utilities/dom"),
-    addClass = DOM.addClass,
-    removeClass = DOM.removeClass,
-    getOlderSiblingsInclusive = DOM.getOlderSiblingsInclusive;
-
-module.exports = function addView(QuillMentions) {
-
-
-    /**
-     * @method
-     */
-    QuillMentions.prototype.hide = function hide() {
-        removeClass(this.container, "ql-is-mentioning");
-        this.container.style.marginTop = "0";
-        if (this.range) this.quill.setSelection(this.range);
-        this.range = null;
-    };
-
-    /**
-     * @method
-     * @param {Object} reference
-     */
-    QuillMentions.prototype.show = function show(reference) {
-
-        var qlContainer = this.quill.container,
-            qlEditor = this.quill.editor.root,
-            qlLines,
-            paddingTop = 10,
-            negMargin = -paddingTop;
-
-
-        this.range = this.quill.getSelection();
-        qlLines = this._findOffsetLines(this.range);
-
-        negMargin += qlEditor.getBoundingClientRect().height;
-        negMargin -= qlLines.reduce(function(total, line) {
-            return total + line.getBoundingClientRect().height;
-        }, 0);
-
-        this.container.style.marginTop = "-"+negMargin+'px';
-        addClass(this.container, "ql-is-mentioning");
-
-        // add keyboard listeners?
-        // or have keyboard listeners filter action based on "ql-is-mentioning";
-
-        this.container.focus(); // has no effect...
-    };
-
-
-    /**
-     * Return the DOM node that encloses the line on which current mention is being typed.
-     * @method
-     * @private
-     * @param {Range} range
-     * @return {Node|null}
-     */
-    QuillMentions.prototype._findMentionNode = function _findMentionNode(range) {
-        var leafAndOffset,
-            leaf,
-            offset,
-            node;
-
-        leafAndOffset = this.quill.editor.doc.findLeafAt(range.start, true);
-        leaf = leafAndOffset[0];
-        offset = leafAndOffset[1]; // how many chars in front of current range
-        if (leaf) node = leaf.node;
-        while (node) {
-            if (node.tagName === "DIV") break;
-            node = node.parentNode;
-        }
-        if (!node) return null;
-        return node;
-    };
-
-    /**
-     * Return an array of dom nodes corresponding to all lines at or before the line corresponding to the current range.
-     * @method
-     * @private
-     * @param {Range} range
-     * @return {Node[]}
-     */
-    QuillMentions.prototype._findOffsetLines = function(range) {
-        var node = this._findMentionNode(range);
-        return getOlderSiblingsInclusive(node);
-    };
-
-
-    /**
-     * Render and return the "no matches found" template string
-     * @getter
-     * @private
-     * @return {string}
-     */
-    Object.defineProperty(QuillMentions.prototype, "noMatchHTML", {
-        get: function() {
-            var template = this.options.noMatchTemplate,
-                message = this.options.noMatchMessage;
-
-            return message ? template.replace("{{message}}", message) : null;
-        }
-    });
-
+},{}],10:[function(require,module,exports){
+module.exports = {
+    escapeRegExp: function escapeRegExp(str) {
+        return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
+    }
 };
-},{"./utilities/dom":9}]},{},[1,2,3,4,5,6,7,8,9,10,11,12]);
+},{}],11:[function(require,module,exports){
+var DOM = require("./utilities/dom"),
+    extend = require("./utilities/extend");
+
+module.exports = View;
+
+
+/**
+ * @constructor
+ * @param {HTMLElement} container
+ * @param {Object} templates - a set of templates into which we render munged data
+ * @param {Object} options
+ */
+function View(container, templates, options) {
+    this.container = container;
+    this.templates = extend({}, templates);
+    this.options = options || {}; // TODO - use Object.assign polyfill
+}
+
+/**
+ * Creates view from data and calls View`_renderSuccess. If there are no data, calls View~_renderError.
+ * @method
+ * @param {array} data
+ */
+View.prototype.render = function(data) {
+    var items,
+        toRender;
+    if (!data || !data.length) {
+        toRender = this.templates.listItem.replace("{{choices}}", this.error);
+        return this._renderError();
+    }
+
+    items = data.map(this._renderLI, this);
+    toRender = this.templates.list.replace("{{choices}}", items);
+    return this._renderSucess(toRender);
+};
+
+/**
+ * Renders list item data to the list item template
+ * @method
+ * @param {array} data
+ */
+View.prototype._renderSucess = function(html) {
+    this.container.innerHTML = html;
+    return this;
+};
+
+/**
+ * Renders the error template
+ * @method
+ * @param {string} error - Message to paste into the popover (most likely html, but text works too!)
+ */
+View.prototype._renderError = function(error) {
+    this.container.innerHTML = error;
+    return this;
+};
+
+
+/**
+ * Renders a datump into a listItem template
+ * @method
+ * @private
+ * @param {string} error - Message to paste into the popover (most likely html, but text works too!)
+ */
+View.prototype._renderLI = function(datum) {
+    return this.templates
+            .listItem
+            .replace("{{choice}}", datum.name) // rename
+            .replace("{{data}}", datum.data);
+};
+
+/**
+ * Makes the popover disappear
+ * @method
+ * @param {Quill} quill
+ * @param {Object} range
+ */
+View.prototype.hide = function hide(quill, range) {
+    DOM.removeClass(this.container, "ql-is-mentioning");
+    this.container.style.marginTop = "0";
+    if (range) quill.setSelection(range);
+    return this;
+};
+
+/**
+ * Returns whether the popover has disappeared. This method could probably live elsewhere? Maybe? Or serve a more narrow purpose.
+ * @method
+ * @returns {boolean}
+ */
+View.prototype.isHidden = function isHidden() {
+    return DOM.hasClass(this.container, "ql-is-mentioning");
+};
+
+/**
+ * Adds an active class to the mentions popover and sits it beneath the cursor.
+ * [TODO - add active class to config]
+ * @method
+ * @param {Quill} quill
+ */
+View.prototype.show = function show(quill) {
+
+    this.container.style.marginTop = this._getNegativeMargin(quill);
+    DOM.addClass(this.container, "ql-is-mentioning"); // TODO - config active class
+    this.container.focus();
+
+    return this;
+};
+
+/**
+ * Return an array of dom nodes corresponding to all lines at or before the line corresponding to the current range.
+ * @method
+ * @private
+ * @param {Range} range
+ * @return {Node[]}
+ */
+View.prototype._findOffsetLines = function(quill) {
+    var node = this._findMentionNode(quill);
+    return DOM.getOlderSiblingsInclusive(node);
+};
+
+/**
+ * Return the DOM node that encloses the line on which current mention is being typed.
+ * @method
+ * @private
+ * @param {Range} range
+ * @return {Node|null}
+ */
+View.prototype._findMentionNode = function _findMentionNode(quill) {
+    var range = quill.getSelection(),
+        leafAndOffset,
+        leaf,
+        offset,
+        node;
+       
+                
+    leafAndOffset = quill.editor.doc.findLeafAt(range.start, true);
+    leaf = leafAndOffset[0];
+    offset = leafAndOffset[1]; // how many chars in front of current range
+    if (leaf) node = leaf.node;
+    while (node) {
+        if (node.tagName === "DIV") break;
+        node = node.parentNode;
+    }
+    if (!node) return null;
+    return node;
+};
+
+/**
+ * @method
+ * @private
+ */
+View.prototype._getNegativeMargin = function(quill) {
+    var qlEditor = quill.editor.root,
+        qlLines,
+        paddingTop = this.paddingTop || 10, // TODO
+        negMargin = -paddingTop,
+        range;
+
+    qlLines = this._findOffsetLines(quill);
+
+    negMargin += this._nodeHeight(qlEditor);
+    negMargin -= qlLines.reduce(function(total, line) {
+        return total + this._nodeHeight(line);
+    }.bind(this), 0);
+
+    return "-" + negMargin + "px";
+};
+
+/**
+ * @method
+ * @private
+ */
+View.prototype._nodeHeight = function(node) {
+    return node.getBoundingClientRect().height;
+};
+
+
+// TODO - write QuillEditor View
+function QuillEditorView() {
+    throw new Error("NYI");
+}
+},{"./utilities/dom":7,"./utilities/extend":8}]},{},[1,2,3,4,5,6,7,8,9,10,11]);

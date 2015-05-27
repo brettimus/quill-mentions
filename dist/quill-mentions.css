@@ -36,9 +36,4 @@
   pointer-events: none;
 }
 
-[class^="ql-mention-item"] {
-  color: #2ba6cb;
-  text-decoration: underline;
-}
-
 /*# sourceMappingURL=quill-mentions.css.map */
