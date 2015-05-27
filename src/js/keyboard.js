@@ -62,7 +62,7 @@ function handleEscape() {
 }
 
 /**
- * Moves the selected list item up or down. (+steps means down, -steps means up)
+ * Moves the selected list item up or down. (+steps means down, -steps means up) PUT THIS IN THE VIEW
  * @method
  * @private
  * @this {QuillMentions}
