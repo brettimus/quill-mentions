@@ -52,21 +52,26 @@ function QuillMentions(quill, options) {
     var modOptions = defaultFactory(options),
         container = this.quill.addContainer(modOptions.containerClassName);
 
-    this.container = container; // TODO see if we can destroy this reference
+    this.triggerSymbol = modOptions.triggerSymbol;
+    this.includeTrigger = modOptions.includeTrigger;
+    this.matcher = modOptions.matcher;
+    this.mentionClass = modOptions.mentionClass;
+    this.isMentioning = false;
+    this.currentMention = null;
+
+    this.selectedChoiceIndex = -1;
+
+    // this.container = container; // [TODO] see if we can destroy this reference. right now KEYs depends on it
 
     this.setView(container, modOptions)
         .setController(modOptions)
-        .listenTextChange(this.quill)
-        .listenSelectionChange(this.quill)
-        .listenHotKeys(this.quill.container)
+        .listenTextChange(quill)
+        .listenSelectionChange(quill)
+        .listenHotKeys(quill)
         .listenClick(container)
         .addFormat();
 
-    this.matcher = this.modOptions.matcher;
-    this.isMentioning = false;
-
-    this.currentMention = null;
-    this.selectedChoiceIndex = -1;
+    this._cachedRange = null;
 }
 
 /**
@@ -96,7 +101,7 @@ QuillMentions.prototype.setController = function(options) {
 
     var formatter,
         config = {
-            max: options.choicesMax,
+            max: options.choiceMax,
         };
     if (!options.ajax) {
         formatter = options.format;
@@ -127,12 +132,13 @@ QuillMentions.prototype.listenTextChange = function listenTextChange(quill) {
 
         if (mention) {
             _this = this;
+            this._cachedRange = quill.getSelection();
             this.isMentioning = true;
             this.currentMention = mention;
-            query = mention[0].replace(this.options.triggerSymbol, "");
+            query = mention[0].replace(this.triggerSymbol, "");
 
             this.controller.search(query, function() {
-                _this.view.show();
+                _this.view.show(_this.quill);
             });
         }
         else {
@@ -157,10 +163,10 @@ QuillMentions.prototype.listenSelectionChange = function(quill) {
     quill.on(eventName, selectionChangeHandler.bind(this));
     return this;
 
-    function selectionChangeHandler() {
+    function selectionChangeHandler(range) {
         if (!range) {
             this.view.hide();
-            quill.setSelection(null);
+            quill.setSelection(null); // this is unnecessary right?
         }
     }
 };
@@ -171,8 +177,8 @@ QuillMentions.prototype.listenSelectionChange = function(quill) {
  * @method
  * @param {Quill} quill - An instance of Quill
  */
-QuillMentions.prototype.listenHotKeys = function(container) {
-    container
+QuillMentions.prototype.listenHotKeys = function(quill) {
+    quill.container
         .addEventListener('keyup',
                            keyboardHandler.bind(this),
                            false); // TIL keypress is intended for keys that normally produce a character
@@ -180,18 +186,17 @@ QuillMentions.prototype.listenHotKeys = function(container) {
 
     function keyboardHandler(event) {
         var code = event.keyCode || event.which;
-        if (this.isMentioning() || code === 13) { // need special logic for enter key :sob:
-            console.log("We are mentioning!");
-            dispatch(code);
-            e.stopPropagation();
-            e.preventDefault();
+        if (this.isMentioning || code === 13) { // need special logic for enter key :sob:
+            dispatch.call(this, code);
+            event.stopPropagation();
+            event.preventDefault();
         }
     }
 
     function dispatch(code) {
         var callback = KEYS[code];
         if (callback) {
-            quill.setSelection(this.range); // HACK oh noz! todo bad icky
+            quill.setSelection(this._cachedRange); // HACK oh noz! todo bad icky
             callback.call(this);
         }
     }
@@ -208,6 +213,7 @@ QuillMentions.prototype.listenClick = function(elt) {
     elt.addEventListener("touchend", addMention.bind(this));
     return this;
 
+    /** Wraps the QuillMentions~addMention method */
     function addMention(event) {
         var target = event.target || event.srcElement;
         if (target.tagName.toLowerCase() === "li") { // TODO - this is bad news... but adding a pointer-event: none; to the error message list item does not work bc i'm using bubbling to capture click events in the first place and oh my garsh is this a long comment...
@@ -237,15 +243,17 @@ QuillMentions.prototype.findMention = function findMention() {
  */
  QuillMentions.prototype.addMention = function addMention(node) {
      var insertAt = this.currentMention.index,
-         toInsert = "@"+node.innerText,
+         toInsert = (this.includeTrigger ? this.triggerSymbol : "") + node.dataset.display,
          toFocus = insertAt + toInsert.length + 1;
 
-     this.hide(); // sequencing?
 
      this.quill.deleteText(insertAt, insertAt + this.currentMention[0].length);
-     this.quill.insertText(insertAt, toInsert, "mention", this.options.mentionClass+"-"+node.dataset.mention);
+     this.quill.insertText(insertAt, toInsert, "mention", this.mentionClass+"-"+node.dataset.mention);
      this.quill.insertText(insertAt + toInsert.length, " ");
      this.quill.setSelection(toFocus, toFocus);
+
+     this.isMentioning = false;
+     this.view.hide(); // sequencing?
  };
 
 
@@ -277,13 +285,13 @@ QuillMentions.prototype.findMention = function findMention() {
 </div>
 
 <nav>
-    <h2><a href="index.html">Index</a></h2><h3>Modules</h3><ul><li><a href="module-controller.html">controller</a></li><li><a href="defaults.html">defaults/defaults</a></li><li><a href="module-mentions.html">mentions</a></li><li><a href="ajax.html">utilities/ajax</a></li><li><a href="extend.html">utilities/extend</a></li><li><a href="identity.html">utilities/identity</a></li></ul><h3>Classes</h3><ul><li><a href="module-controller-AJAXController.html">AJAXController</a></li><li><a href="module-controller-Controller.html">Controller</a></li><li><a href="module-mentions-QuillMentions.html">QuillMentions</a></li><li><a href="View.html">View</a></li></ul><h3>Namespaces</h3><ul><li><a href="KEYS.html">KEYS</a></li><li><a href="defaults-ajaxDefaults.html">ajaxDefaults</a></li><li><a href="defaults-defaults.html">defaults</a></li></ul><h3>Global</h3><ul><li><a href="global.html#_moveSelection">_moveSelection</a></li><li><a href="global.html#defaultFactory">defaultFactory</a></li><li><a href="global.html#extend">extend</a></li><li><a href="global.html#extendHelper">extendHelper</a></li><li><a href="global.html#handleDownKey">handleDownKey</a></li><li><a href="global.html#handleEnter">handleEnter</a></li><li><a href="global.html#handleEscape">handleEscape</a></li><li><a href="global.html#handleUpKey">handleUpKey</a></li><li><a href="global.html#identity">identity</a></li><li><a href="global.html#loadJSON">loadJSON</a></li></ul>
+    <h2><a href="index.html">Index</a></h2><h3>Modules</h3><ul><li><a href="module-controller.html">controller</a></li><li><a href="defaults.html">defaults/defaults</a></li><li><a href="module-mentions.html">mentions</a></li><li><a href="ajax.html">utilities/ajax</a></li><li><a href="extend.html">utilities/extend</a></li><li><a href="identity.html">utilities/identity</a></li></ul><h3>Classes</h3><ul><li><a href="module-controller-AJAXController.html">AJAXController</a></li><li><a href="module-controller-Controller.html">Controller</a></li><li><a href="module-mentions-QuillMentions.html">QuillMentions</a></li><li><a href="View.html">View</a></li></ul><h3>Namespaces</h3><ul><li><a href="KEYS.html">KEYS</a></li><li><a href="defaults-ajaxDefaults.html">ajaxDefaults</a></li><li><a href="defaults-defaults.html">defaults</a></li></ul><h3>Global</h3><ul><li><a href="global.html#_moveSelection">_moveSelection</a></li><li><a href="global.html#defaultFactory">defaultFactory</a></li><li><a href="global.html#extend">extend</a></li><li><a href="global.html#extendHelper">extendHelper</a></li><li><a href="global.html#handleDownKey">handleDownKey</a></li><li><a href="global.html#handleEnter">handleEnter</a></li><li><a href="global.html#handleEscape">handleEscape</a></li><li><a href="global.html#handleUpKey">handleUpKey</a></li><li><a href="global.html#identity">identity</a></li><li><a href="global.html#loadJSON">loadJSON</a></li><li><a href="global.html#replaceAll">replaceAll</a></li></ul>
 </nav>
 
 <br clear="both">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.2.2</a> on Wed May 27 2015 05:56:12 GMT-0700 (PDT)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.2.2</a> on Wed May 27 2015 06:53:27 GMT-0700 (PDT)
 </footer>
 
 <script> prettyPrint(); </script>

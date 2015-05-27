@@ -12,7 +12,8 @@ var extend = require("../utilities/extend"),
  * @prop {object[]} choices - A static array of possible choices. Ignored if `ajax` is truthy.
  * @prop {string} choiceTemplate - A string used as a template for possible choices.
  * @prop {string} containerClassName - The class attached to the mentions view container.
- * @prop {Function} format - Function used by a Controller instance to munge data into expected form. 
+ * @prop {function} format - Function used by a Controller instance to munge data into expected form. 
+ * @prop {boolean} includeTrigger - Whether to prepend triggerSymbol to the inserted mention. 
  * @prop {RegExp} matcher - The regular expression used to trigger Controller#search
  * @prop {string} mentionClass - Prefixed with `ql-` for now because of how quill handles custom formats. The class given to inserted mention. 
  * @prop {string} noMatchMessage - A message to display 
@@ -25,9 +26,10 @@ var defaults = {
     ajax: false,
     choiceMax: 6,
     choices: [],
-    choiceTemplate: "<li data-mention=\"{{data}}\">{{choice}}</li>",
+    choiceTemplate: "<li data-display=\"{{choice}}\" data-mention=\"{{data}}\">{{choice}}</li>",
     containerClassName: "ql-mentions",
     format: identity,
+    includeTrigger: false,
     matcher: /@\w+$/i,
     mentionClass: "mention-item",
     noMatchMessage: "Ruh Roh Raggy!",

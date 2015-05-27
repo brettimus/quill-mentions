@@ -17,7 +17,13 @@
             <p class="browserupgrade">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
         <![endif]-->
 
-        <h1>Quill Mentions</h1>
+        <h1>
+          Quill Mentions
+          <small>
+            Try this totally badass example<br>
+            that uses ajax to fetch fucking emoji.
+          </small>
+        </h1>
 
         <div class="quill-wrapper">
          <div class="toolbar ql-toolbar ql-snow">
@@ -39,7 +45,9 @@
               <span title="Link" class="ql-format-button ql-link"></span>
             </span>
           </div>
-          <div class="editor ql-container ql-snow" id="editor"></div>
+          <div class="editor ql-container ql-snow" id="editor">
+            hello there 😅 
+          </div>
         </div>
 
         <script src="./lp/utilities.js"></script>
@@ -68,6 +76,7 @@
                   'mentions': {
                       choices: emojiChoices,
                       choiceTemplate: "<li>{{data}}</li>",
+                      choiceTemplate: "<li data-display=\"{{data}}\" data-mention=\"\">{{data}} :{{choice}}:</li>",
                       matcher: /\:(\w{2,})$/i, // for emoji, calling with :
                       noMatchMessage: "Type a real emoji!",
                       triggerSymbol: ":",

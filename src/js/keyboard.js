@@ -52,6 +52,8 @@ function handleEnter() {
         currIndex = this.selectedChoiceIndex,
         currNode;
 
+    console.log("handling enter");
+
     if (currIndex === -1) return;
     nodes = this.view.container.querySelectorAll("li");
     if (nodes.length === 0) return;
@@ -65,7 +67,8 @@ function handleEnter() {
  * @this {QuillMentions}
  */
 function handleEscape() {
-    this.hide();
+    this.view.hide();
+    this.isMentioning = false;
     // may need to set selection
     this.quill.focus();
 }
