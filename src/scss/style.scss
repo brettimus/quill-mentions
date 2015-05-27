@@ -20,6 +20,12 @@ $faux-link: #2ba6cb;
       -webkit-transform: translateZ(1px); // hack... makes the overlay _actually_ overlay text inside the editor. tried using z-index but no dice.
       transform: translateZ(1px);
 
+      &.ql-mention-choice-selected,
+      &:hover {
+        background: #888;
+        color: white;
+      }
+
       &:last-child {
         border-bottom: none;
       }
@@ -38,17 +44,12 @@ $faux-link: #2ba6cb;
   @extend %ql-mentions-base;
 }
 
-.ql-mention-item {
-  color: $faux-link;
-  text-decoration: underline;
-
-  &.ql-mention-item-selected,
-  &:hover {
-    background: #888;
-    color: white;
-  }
-}
-
-.ql-mention-item-no-match {
+.ql-mention-choice-no-match {
   pointer-events: none;
 }
+
+[class^="ql-mention-item"] {
+  color: $faux-link;
+  text-decoration: underline;
+}
+

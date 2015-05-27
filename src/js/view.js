@@ -1,4 +1,7 @@
-var getOlderSiblingsInclusive = require("./utilities/dom").getOlderSiblingsInclusive;
+var DOM = require("./utilities/dom"),
+    addClass = DOM.addClass,
+    removeClass = DOM.removeClass,
+    getOlderSiblingsInclusive = DOM.getOlderSiblingsInclusive;
 
 module.exports = function addView(QuillMentions) {
 
@@ -7,7 +10,7 @@ module.exports = function addView(QuillMentions) {
      * @method
      */
     QuillMentions.prototype.hide = function hide() {
-        this.container.className = this.container.className.replace(/ql\-is\-mentioning/g, "");
+        removeClass(this.container, "ql-is-mentioning");
         this.container.style.marginTop = "0";
         if (this.range) this.quill.setSelection(this.range);
         this.range = null;
@@ -35,7 +38,7 @@ module.exports = function addView(QuillMentions) {
         }, 0);
 
         this.container.style.marginTop = "-"+negMargin+'px';
-        this.container.className += " ql-is-mentioning";
+        addClass(this.container, "ql-is-mentioning");
 
         // add keyboard listeners?
         // or have keyboard listeners filter action based on "ql-is-mentioning";
@@ -91,8 +94,9 @@ module.exports = function addView(QuillMentions) {
     Object.defineProperty(QuillMentions.prototype, "noMatchHTML", {
         get: function() {
             var template = this.options.noMatchTemplate,
-                notFound = this.options.noMatchMessage;
-            return template.replace("{{message}}", notFound);
+                message = this.options.noMatchMessage;
+
+            return message ? template.replace("{{message}}", message) : null;
         }
     });
 

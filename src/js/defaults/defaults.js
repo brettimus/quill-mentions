@@ -27,8 +27,8 @@ var defaults = {
     hideMargin: '-10000px',
     matcher: /@\w+$/i,
     mentionClass: "mention-item",
-    noMatchMessage: "Ruh roh raggy!",
-    noMatchTemplate: "<li class='ql-mention-item-no-match'><i>{{message}}</i></li>",
+    noMatchMessage: "Ruh Roh Raggy!",
+    noMatchTemplate: "<li class='ql-mention-choice-no-match'><i>{{message}}</i></li>",
     offset: 10,
     template: '<ul>{{choices}}</ul>',
 };

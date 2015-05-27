@@ -131,7 +131,10 @@ QuillMentions.prototype.findMention = function findMention() {
  */
 QuillMentions.prototype.addMentionHandler = function addMentionHandler(e) {
     var target = e.target || e.srcElement;
-    this.addMention(target);
+    if (target.tagName === "li") { // TODO - this is bad news... but adding a pointer-event: none; does not work bc i'm using bubbling...
+        console.log(target);
+        this.addMention(target);
+    }
     e.stopPropagation();
 };
 
@@ -146,7 +149,7 @@ QuillMentions.prototype.addMentionHandler = function addMentionHandler(e) {
      this.hide(); // sequencing?
 
      this.quill.deleteText(insertAt, insertAt + this.currentMention[0].length);
-     this.quill.insertText(insertAt, toInsert, "mention", this.options.mentionClass);
+     this.quill.insertText(insertAt, toInsert, "mention", this.options.mentionClass+"-"+node.dataset.mention);
      this.quill.insertText(insertAt + toInsert.length, " ");
      this.quill.setSelection(toFocus, toFocus);
  };

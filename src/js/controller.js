@@ -1,15 +1,23 @@
 module.exports = function addController(QuillMentions) {
 
     /**
+     * TODO - this should simply pass data to the view and let it sort shit out.
      * @method
      */
     QuillMentions.prototype.renderCurrentChoices = function renderCurrentChoices() {
+        var noMatchFoundMessage;
         if (this.hasChoices()) {
             this.render(this._getChoicesHTML());
         }
         else {
             // render helpful message about nothing matching so far...
-            this.render(this.noMatchHTML);
+            noMatchFoundMessage = this.noMatchHTML;
+            console.log(noMatchFoundMessage);
+            if (noMatchFoundMessage) {
+                this.render(noMatchFoundMessage);
+            } else {
+                this.hide();
+            }
         }
     };
 

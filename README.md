@@ -41,10 +41,10 @@ Pass the global `QuillMentions` contsructor to Quill's [registerModule](http://q
 * ~~vertically align popover to position of calling `@`~~
 
 # v0.1 goals
-* Customizable no-match-found messages
-* Keyboard events for up and down arrows
-* Insert data with mention into markup (this might require deviating from custom quill format because custom formats are too nascent :confused:)
-* Horizontally align
+* ~~Customizable no-match-found messages~~ TODO - figre out how to configure so there's _no message_. Was running into issues trying this out.
+* ~~Keyboard events for up and down arrows~~ Also for escape and enter!
+* ~~Insert data with mention into markup (this might require deviating from custom quill format because custom formats are too nascent :confused:)~~ Currently, the `data-mention` attribute from a matching `li` is appended to the class of a mention `span`. This is hacky, but it avoids having to manually insert HTML...
+* Horizontally align the popover
 
 # TODO
 * Find alternative to current use of `transform: translateZ` on the popover list items...

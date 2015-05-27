@@ -2,15 +2,23 @@
 module.exports = function addController(QuillMentions) {
 
     /**
+     * TODO - this should simply pass data to the view and let it sort shit out.
      * @method
      */
     QuillMentions.prototype.renderCurrentChoices = function renderCurrentChoices() {
+        var noMatchFoundMessage;
         if (this.hasChoices()) {
             this.render(this._getChoicesHTML());
         }
         else {
             // render helpful message about nothing matching so far...
-            this.render(this.noMatchHTML);
+            noMatchFoundMessage = this.noMatchHTML;
+            console.log(noMatchFoundMessage);
+            if (noMatchFoundMessage) {
+                this.render(noMatchFoundMessage);
+            } else {
+                this.hide();
+            }
         }
     };
 
@@ -91,8 +99,8 @@ var defaults = {
     hideMargin: '-10000px',
     matcher: /@\w+$/i,
     mentionClass: "mention-item",
-    noMatchMessage: "Ruh roh raggy!",
-    noMatchTemplate: "<li class='ql-mention-item-no-match'><i>{{message}}</i></li>",
+    noMatchMessage: "Ruh Roh Raggy!",
+    noMatchTemplate: "<li class='ql-mention-choice-no-match'><i>{{message}}</i></li>",
     offset: 10,
     template: '<ul>{{choices}}</ul>',
 };
@@ -139,10 +147,9 @@ global.QuillMentions = require("./mentions");
 },{"./mentions":6}],5:[function(require,module,exports){
 var DOM = require("./utilities/dom"),
     addClass = DOM.addClass,
-    removeClass = DOM.removeClass,
-    eventFire = DOM.eventFire;
+    removeClass = DOM.removeClass;
 
-var SELECTED_CLASS = "ql-mention-item-selected";
+var SELECTED_CLASS = "ql-mention-choice-selected";
 
 /**
  * Dispatches keyboard events to handlers
@@ -185,12 +192,10 @@ function handleEnter() {
 
     if (currIndex === -1) return;
     nodes = this.container.querySelectorAll("li");
-    console.log(nodes);
     if (nodes.length === 0) return;
     currNode = nodes[currIndex];
-    eventFire(currNode, "click");
+    this.addMention(currNode);
     this.selectedChoiceIndex = -1;
-    
 }
 
 /**
@@ -383,7 +388,10 @@ QuillMentions.prototype.findMention = function findMention() {
  */
 QuillMentions.prototype.addMentionHandler = function addMentionHandler(e) {
     var target = e.target || e.srcElement;
-    this.addMention(target);
+    if (target.tagName === "li") { // TODO - this is bad news... but adding a pointer-event: none; does not work bc i'm using bubbling...
+        console.log(target);
+        this.addMention(target);
+    }
     e.stopPropagation();
 };
 
@@ -398,7 +406,7 @@ QuillMentions.prototype.addMentionHandler = function addMentionHandler(e) {
      this.hide(); // sequencing?
 
      this.quill.deleteText(insertAt, insertAt + this.currentMention[0].length);
-     this.quill.insertText(insertAt, toInsert, "mention", this.options.mentionClass);
+     this.quill.insertText(insertAt, toInsert, "mention", this.options.mentionClass+"-"+node.dataset.mention);
      this.quill.insertText(insertAt + toInsert.length, " ");
      this.quill.setSelection(toFocus, toFocus);
  };
@@ -517,16 +525,20 @@ module.exports = {
 module.exports.addClass = addClass;
 module.exports.removeClass = removeClass;
 module.exports.getOlderSiblingsInclusive = getOlderSiblingsInclusive;
-module.exports.eventFire = eventFire;
 
 function addClass(node, className) {
     if (!node) return;
-    node.className += " "+className;
+    if (!node.className) node.className = className;
+    else if (node.className.indexOf(className) === -1) {
+        node.className += " "+className;
+    }
 }
 
 function removeClass(node, className) {
     if (!node) return;
-    node.className = node.className.replace(className, "");
+    while (node.className.indexOf(className) !== -1) {
+        node.className = node.className.replace(className, "");
+    }
 }
 
 function getOlderSiblingsInclusive(node) {
@@ -539,16 +551,10 @@ function getOlderSiblingsInclusive(node) {
     return result;
 }
 
-function eventFire(el, etype){
-    if (el.fireEvent) {
-        el.fireEvent('on' + etype);
-    } else {
-        var evObj = document.createEvent('Events');
-        evObj.initEvent(etype, true, false);
-        el.dispatchEvent(evObj);
-    }
+// helper
+function escapeRegExp(str) {
+  return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
 }
-
 },{}],10:[function(require,module,exports){
 /**
  * Extend module
@@ -598,7 +604,10 @@ function identity(d) {
     return d;
 }
 },{}],12:[function(require,module,exports){
-var getOlderSiblingsInclusive = require("./utilities/dom").getOlderSiblingsInclusive;
+var DOM = require("./utilities/dom"),
+    addClass = DOM.addClass,
+    removeClass = DOM.removeClass,
+    getOlderSiblingsInclusive = DOM.getOlderSiblingsInclusive;
 
 module.exports = function addView(QuillMentions) {
 
@@ -607,7 +616,7 @@ module.exports = function addView(QuillMentions) {
      * @method
      */
     QuillMentions.prototype.hide = function hide() {
-        this.container.className = this.container.className.replace(/ql\-is\-mentioning/g, "");
+        removeClass(this.container, "ql-is-mentioning");
         this.container.style.marginTop = "0";
         if (this.range) this.quill.setSelection(this.range);
         this.range = null;
@@ -635,7 +644,7 @@ module.exports = function addView(QuillMentions) {
         }, 0);
 
         this.container.style.marginTop = "-"+negMargin+'px';
-        this.container.className += " ql-is-mentioning";
+        addClass(this.container, "ql-is-mentioning");
 
         // add keyboard listeners?
         // or have keyboard listeners filter action based on "ql-is-mentioning";
@@ -691,8 +700,9 @@ module.exports = function addView(QuillMentions) {
     Object.defineProperty(QuillMentions.prototype, "noMatchHTML", {
         get: function() {
             var template = this.options.noMatchTemplate,
-                notFound = this.options.noMatchMessage;
-            return template.replace("{{message}}", notFound);
+                message = this.options.noMatchMessage;
+
+            return message ? template.replace("{{message}}", message) : null;
         }
     });
 

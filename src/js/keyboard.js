@@ -1,9 +1,8 @@
 var DOM = require("./utilities/dom"),
     addClass = DOM.addClass,
-    removeClass = DOM.removeClass,
-    eventFire = DOM.eventFire;
+    removeClass = DOM.removeClass;
 
-var SELECTED_CLASS = "ql-mention-item-selected";
+var SELECTED_CLASS = "ql-mention-choice-selected";
 
 /**
  * Dispatches keyboard events to handlers
@@ -46,12 +45,10 @@ function handleEnter() {
 
     if (currIndex === -1) return;
     nodes = this.container.querySelectorAll("li");
-    console.log(nodes);
     if (nodes.length === 0) return;
     currNode = nodes[currIndex];
-    eventFire(currNode, "click");
+    this.addMention(currNode);
     this.selectedChoiceIndex = -1;
-    
 }
 
 /**
