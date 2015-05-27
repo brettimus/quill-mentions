@@ -1,94 +1,108 @@
-// TODO - write Editor View
-function EditorView() {
-    throw new Error("NYI");
-}
-
-
-var DOM = require("./utilities/dom");
-
+var DOM = require("./utilities/dom"),
+    extend = require("./utilities/extend");
 
 module.exports = View;
 
 
 /**
  * @constructor
+ * @param {HTMLElement} container
+ * @param {Object} templates - a set of templates into which we render munged data
+ * @param {Object} options
  */
 function View(container, templates, options) {
     this.container = container;
-    this.list = templates.list;
-    this.listItem = templates.listItem;
-    this.error = templates.error;
+    this.templates = extend({}, templates);
     this.options = options || {}; // TODO - use Object.assign polyfill
 }
 
-
 /**
- * Renders data to the template
+ * Creates view from data and calls View`_renderSuccess. If there are no data, calls View~_renderError.
  * @method
  * @param {array} data
  */
 View.prototype.render = function(data) {
-    var ulTemplate = this.list,
-        liTemplate = this.listItem;
+    var items,
+        toRender;
+    if (!data || !data.length) {
+        toRender = this.templates.listItem.replace("{{choices}}", this.error);
+        return this._renderError();
+    }
 
-    if (data && data.length) {
-        this.container.innerHTML = ulTempalte.replace("{{choices}}", data.map(this._renderLI));
-    }
-    else {
-        this.container.innerHTML = ulTempalte.replace("{{choices}}", this.error);
-    }
+    items = data.map(this._renderLI);
+    toRender = this.templates.list.replace("{{choices}}", items);
+    return this._renderSucess(toRender);
 };
 
-View.prototype._renderLI = function(datum) {
-    return this.listItem
-            .replace("{{choice}}", datum.name) // rename
-            .replace("{{data}}", datum.data);
+/**
+ * Renders list item data to the list item template
+ * @method
+ * @param {array} data
+ */
+View.prototype._renderSucess = function(html) {
+    this.container.innerHTML = html;
+    return this;
+};
+
+/**
+ * Renders the error template
+ * @method
+ * @param {string} error - Message to paste into the popover (most likely html, but text works too!)
+ */
+View.prototype._renderError = function(error) {
+    this.container.innerHTML = error;
+    return this;
 };
 
 
 /**
+ * Renders a datump into a listItem template
  * @method
+ * @private
+ * @param {string} error - Message to paste into the popover (most likely html, but text works too!)
+ */
+View.prototype._renderLI = function(datum) {
+    return this.templates
+            .listItem
+            .replace("{{choice}}", datum.name) // rename
+            .replace("{{data}}", datum.data);
+};
+
+/**
+ * Makes the popover disappear
+ * @method
+ * @param {Quill} quill
+ * @param {Object} range
  */
 View.prototype.hide = function hide(quill, range) {
     DOM.removeClass(this.container, "ql-is-mentioning");
     this.container.style.marginTop = "0";
     if (range) quill.setSelection(range);
+    return this;
 };
 
 /**
+ * Returns whether the popover has disappeared. This method could probably live elsewhere? Maybe? Or serve a more narrow purpose.
  * @method
+ * @returns {boolean}
  */
 View.prototype.isHidden = function isHidden() {
     return DOM.hasClass(this.container, "ql-is-mentioning");
 };
 
 /**
+ * Adds an active class to the mentions popover and sits it beneath the cursor.
+ * [TODO - add active class to config]
  * @method
  * @param {Quill} quill
- * @private
  */
 View.prototype.show = function show(quill) {
 
-    // todo alphabetize
-    var range,
-        qlContainer = quill.container,
-        qlEditor = quill.editor.root,
-        qlLines,
-        paddingTop = this.options.paddingTop || 10,
-        negMargin = -paddingTop;
-
-
-    range = quill.getSelection();
-    qlLines = this._findOffsetLines(range);
-
-    negMargin += qlEditor.getBoundingClientRect().height;
-    negMargin -= qlLines.reduce(function(total, line) {
-        return total + line.getBoundingClientRect().height;
-    }, 0);
-
-    this.container.style.marginTop = "-"+negMargin+'px';
-    DOM.addClass(this.container, "ql-is-mentioning");
+    this.container.style.marginTop = this._getNegativeMargin(quill);
+    DOM.addClass(this.container, "ql-is-mentioning"); // TODO - config active class
     this.container.focus();
+
+    return this;
 };
 
 /**
@@ -127,3 +141,39 @@ View.prototype._findMentionNode = function _findMentionNode(quill) {
     if (!node) return null;
     return node;
 };
+
+/**
+ * @method
+ * @private
+ */
+View.prototype._getNegativeMargin = function(quill) {
+    var qlEditor = quill.editor.root,
+        qlLines,
+        paddingTop = this.paddingTop || 10, // TODO
+        negMargin = -paddingTop,
+        range;
+
+    range = quill.getSelection();
+    qlLines = this._findOffsetLines(range);
+
+    negMargin += this._nodeHeight(qlEditor);
+    negMargin -= qlLines.reduce(function(total, line) {
+        return total + this._nodeHeight(line);
+    }.bind(this), 0);
+
+    return "-" + negMargin + "px";
+};
+
+/**
+ * @method
+ * @private
+ */
+View.prototype._nodeHeight = function(node) {
+    return node.getBoundingClientRect().height;
+};
+
+
+// TODO - write QuillEditor View
+function QuillEditorView() {
+    throw new Error("NYI");
+}

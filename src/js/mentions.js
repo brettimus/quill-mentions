@@ -1,8 +1,11 @@
+/** @module mentions */
+
 var AJAXController = require("./controller").AJAXController,
     Controller = require("./controller").Controller,
     View = require("./view");
 
-var defaultFactory = require("./defaults/defaults"),
+var extend = require("./utilities/extend"),
+    defaultFactory = require("./defaults/defaults"), // keep in defaults so we can write specific defaults for each object
     KEYS = require("./keyboard");
 
 module.exports = QuillMentions;
@@ -11,6 +14,8 @@ module.exports = QuillMentions;
  * @constructor
  * @param {Object} quill - An instance of `Quill`.
  * @param {Object} [options] - User configuration passed to the mentions module. It's mixed in with defaults.
+ * @prop {Quill} quill
+ * @prop {DOMNode} container - Container for the popover (a.k.a. the View)
  * @prop {RegExp} matcher - Used to scan contents of editor for mentions.
  * @prop {Bool} isMentioning - Updated with our "mentioning state" changes. 
  */
@@ -63,21 +68,25 @@ QuillMentions.prototype.setController = function(options) {
     if (!this.view) throw new Error("Must set view before controller.");
 
     var formatter,
-        data,
-        ajaxConfig = options.ajax;
-    if (!ajaxConfig) {
+        config = {
+            max: options.choicesMax,
+        };
+    if (!options.ajax) {
         formatter = options.format;
-        database = modOptions.choices;
-        this.controller = new Controller(formatter, this.view, database);
+        config.data = options.choices;
+        this.controller = new Controller(formatter, this.view, config);
     } else {
-        formatter = ajax.format;
-        this.controller = new AJAXController(formatter, this.view, ajaxConfig);
+        formatter = options.ajax.format;
+        extend(config, options.ajax);
+        this.controller = new AJAXController(formatter, this.view, config);
     }
     return this;
 };
 
 /**
+ * Sets a listener for text-change events on the given Quill instance
  * @method
+ * @param {Quill} quill - An instance of Quill
  */
 QuillMentions.prototype.listenTextChange = function listenTextChange(quill) {
     var eventName = this.quill.constructor.events.TEXT_CHANGE;
@@ -112,7 +121,9 @@ QuillMentions.prototype.listenTextChange = function listenTextChange(quill) {
 
 
 /**
+ * Sets a listener for selection-change events on the given Quill instance
  * @method
+ * @param {Quill} quill - An instance of Quill
  */
 QuillMentions.prototype.listenSelectionChange = function(quill) {
     var eventName = quill.constructor.events.SELECTION_CHANGE;
@@ -128,7 +139,10 @@ QuillMentions.prototype.listenSelectionChange = function(quill) {
 };
 
 /**
+ * Sets a listener for keyboard events on the given container.
+ * Events are dispatched through the KEYS object.
  * @method
+ * @param {Quill} quill - An instance of Quill
  */
 QuillMentions.prototype.listenHotKeys = function(container) {
     container
@@ -156,23 +170,10 @@ QuillMentions.prototype.listenHotKeys = function(container) {
     }
 };
 
-
 /**
+ * Listens for a click or touchend event on the View.
  * @method
- * @return {Match}
- */
-QuillMentions.prototype.findMention = function findMention() {
-    var cursor = this.quill.getSelection().end,
-        contents,
-        match;
-    contents = this.quill.getText(0, cursor);
-    match = this.options.matcher.exec(contents);
-    return match;
-};
-
-
-/**
- * @method
+ * @param {HTMLElement} elt
  */
 Quill.prototype.listenClick = function(elt) {
 
@@ -182,7 +183,7 @@ Quill.prototype.listenClick = function(elt) {
 
     function addMention(event) {
         var target = event.target || event.srcElement;
-        if (target.tagName === "li") { // TODO - this is bad news... but adding a pointer-event: none; does not work bc i'm using bubbling...
+        if (target.tagName.toLowerCase() === "li") { // TODO - this is bad news... but adding a pointer-event: none; to the error message list item does not work bc i'm using bubbling to capture click events in the first place and oh my garsh is this a long comment...
             console.log(target);
             this.addMention(target);
         }
@@ -191,19 +192,21 @@ Quill.prototype.listenClick = function(elt) {
 };
 
 /**
+ * Looks for a string in the editor (up to the cursor's current position) for a match to QuillMentions~matcher
  * @method
+ * @return {Match}
  */
-QuillMentions.prototype.addMentionHandler = function addMentionHandler(e) {
-    var target = e.target || e.srcElement;
-    if (target.tagName === "li") { // TODO - this is bad news... but adding a pointer-event: none; does not work bc i'm using bubbling...
-        console.log(target);
-        this.addMention(target);
-    }
-    e.stopPropagation();
+QuillMentions.prototype.findMention = function findMention() {
+    var cursor = this.quill.getSelection().end,
+        contents = this.quill.getText(0, cursor);
+
+    return this.matcher.exec(contents);
 };
 
 /**
+ * Needs to be refactored! QuillMention should be responsible for this action.
  * @method
+ * @param {HTMLElement}
  */
  QuillMentions.prototype.addMention = function addMention(node) {
      var insertAt = this.currentMention.index,
@@ -220,6 +223,7 @@ QuillMentions.prototype.addMentionHandler = function addMentionHandler(e) {
 
 
  /**
+  * Refactor.
   * @method
   */
  QuillMentions.prototype.hasSelection = function() {

@@ -1,3 +1,7 @@
+// TODO - factor out data munging into separate object
+
+/** @module controller */
+
 var loadJSON = require("./utilities/ajax").loadJSON,
     escapeRegExp = require("./utilities/regexp").escapeRegExp;
 
@@ -19,9 +23,11 @@ function Controller(formatter, view, options) {
     this.format = formatter;
     this.view = view;
     this.data = options.data;
+    this.max = options.max;
 }
 
 /**
+ * Looks for match to the qry in the given data.
  * @method
  * @param {string} qry
  * @param {searchCallback} callback - Probably unnecessary...
@@ -31,23 +37,29 @@ Controller.prototype.search = function search(qry, callback) {
         var qryRE = new RegExp(escapeRegExp(qry), "i");
         return qryRE.test(d.name);
     });
-    this.view.render(data);
+
+    this.view.render(data.slice(0, this.max)); // IDEA TODO - just don't render if there's no data & no error template
+    if (callback) callback();
 };
+
 
 /**
  * @constructor
+ * @augments Controller
+ * @param {Function} formatter - munges callback data
+ * @param {View} view
+ * @param {Object} options
  */
 function AJAXController(formatter, view, options) {
     this.path = options.path;
     this.queryParameter = options.queryParameter;
-
     this._latestCall = null;
 }
 AJAXController.prototype = Object.create(Controller.prototype);
 
 /**
  * @method
- * @param {string} qry
+ * @param {String} qry
  * @param {searchCallback} callback - Callback that handles returned JSON data
  */
 AJAXController.prototype.search = function search(qry, callback) {
@@ -60,49 +72,17 @@ AJAXController.prototype.search = function search(qry, callback) {
     this._latestCall = loadJSON(qryString, this._callback.bind(this), ajaxError);
 };
 
+/**
+ * Munges the callback data
+ * @method
+ * @private
+ * @param {array} data
+ */
 AJAXController.prototype._callback = function(data) {
+    data = data.slice(0, this.max);
     this.view.render(data.map(this.formatter));
 };
 
-
-
-
-
-
-
-
-
-
-/**
- * Renders possible matches into the popover. TODO - this should simply pass data to the view and let it sort shit out.
- * @method
- */
-Controller.prototype.renderCurrentChoices = function renderCurrentChoices(data) {
-    var noMatchFoundMessage;
-    if (data && data.length > 0) {
-        this.render(data);
-    }
-    else {
-        // render helpful message about nothing matching so far...
-        noMatchFoundMessage = this.noMatchHTML;
-        if (noMatchFoundMessage) {
-            this.view.render(noMatchFoundMessage);
-        } else {
-            this.hide();
-        }
-    }
-};
-
-
-
-
-
-function ajaxSuccess(callback, formatter) {
-    return function(data) {
-        if (callback) callback(data.map(formatter));
-    };
-}
 function ajaxError(error) {
-    console.log("Loading json errored...", error);
+    console.log("Loading json errored! Likely due to aborted request, but there's the error: ", error);
 }
-
