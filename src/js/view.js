@@ -160,7 +160,6 @@ View.prototype._getNegativeMargin = function(quill) {
         range;
 
     qlLines = this._findOffsetLines(quill);
-    console.log(qlLines);
 
     negMargin += this._nodeHeight(qlEditor);
     negMargin -= qlLines.reduce(function(total, line) {

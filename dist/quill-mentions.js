@@ -387,20 +387,20 @@ QuillMentions.prototype.listenTextChange = function listenTextChange(quill) {
     quill.on(eventName, textChangeHandler.bind(this));
     return this;
 
-    function textChangeHandler(_) {
+    function textChangeHandler(_, source) {
+        if (source === "api") return;
         var mention = this.findMention(),
             query,
             _this;
-
+            
         if (mention) {
-            _this = this;
             this._cachedRange = quill.getSelection();
+            _this = this;
             this.isMentioning = true;
             this.currentMention = mention;
             query = mention[0].replace(this.triggerSymbol, "");
 
             this.controller.search(query, function() {
-                console.log("DONT CALL IT A COMEBACK");
                 _this.view.show(_this.quill);
             });
         }
@@ -479,11 +479,11 @@ QuillMentions.prototype.listenClick = function(elt) {
     /** Wraps the QuillMentions~addMention method */
     function addMention(event) {
         var target = event.target || event.srcElement;
+        console.log(target);
         if (target.tagName.toLowerCase() === "li") { // TODO - this is bad news... but adding a pointer-event: none; to the error message list item does not work bc i'm using bubbling to capture click events in the first place and oh my garsh is this a long comment...
-            console.log(target);
             this.addMention(target);
         }
-        e.stopPropagation();
+        event.stopPropagation();
     }
 };
 
@@ -493,7 +493,8 @@ QuillMentions.prototype.listenClick = function(elt) {
  * @return {Match}
  */
 QuillMentions.prototype.findMention = function findMention() {
-    var cursor = this.quill.getSelection().end,
+    var range = this.quill.getSelection() || this._cachedRange,
+        cursor = range.end,
         contents = this.quill.getText(0, cursor);
 
     return this.matcher.exec(contents);
@@ -834,7 +835,6 @@ View.prototype._getNegativeMargin = function(quill) {
         range;
 
     qlLines = this._findOffsetLines(quill);
-    console.log(qlLines);
 
     negMargin += this._nodeHeight(qlEditor);
     negMargin -= qlLines.reduce(function(total, line) {

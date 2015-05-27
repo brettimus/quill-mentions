@@ -69,7 +69,6 @@ function handleEnter() {
 function handleEscape() {
     this.view.hide();
     this.isMentioning = false;
-    // may need to set selection
     this.quill.focus();
 }
 
