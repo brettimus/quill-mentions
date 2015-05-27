@@ -31,7 +31,6 @@ module.exports = function addView(QuillMentions) {
 
         negMargin += qlEditor.getBoundingClientRect().height;
         negMargin -= qlLines.reduce(function(total, line) {
-            console.log(line, total);
             return total + line.getBoundingClientRect().height;
         }, 0);
 

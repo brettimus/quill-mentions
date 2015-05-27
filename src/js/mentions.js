@@ -51,7 +51,7 @@ QuillMentions.prototype.addListeners = function addListeners() {
     this.container.addEventListener('click', addMentionHandler, false);
     this.container.addEventListener('touchend', addMentionHandler, false);
 
-    this.quill.container.addEventListener('keyup', keyboardHandler, false);
+    this.quill.container.addEventListener('keyup', keyboardHandler, false); // TIL keypress is intended for keys that normally produce a character
 };
 
 /**
@@ -72,7 +72,7 @@ QuillMentions.prototype.textChangeHandler = function textChangeHandler(_delta) {
         });
     }
     else if (this.isMentioning()) {
-        this.currentMention = null;
+        // this.currentMention = null; // DANGER HACK TODO NOOOO
         this.range = null;   // Prevent restoring selection to last saved
         this.hide();
     }
@@ -83,7 +83,7 @@ QuillMentions.prototype.textChangeHandler = function textChangeHandler(_delta) {
  */
 QuillMentions.prototype.keyboardHandler = function(e) {
     var code = e.keyCode || e.which;
-    if (this.isMentioning()) {
+    if (this.isMentioning() || code === 13) { // need special logic for enter key :sob:
         console.log("We are mentioning!");
         this._dispatchKeycode(code);
         e.stopPropagation();
@@ -93,7 +93,10 @@ QuillMentions.prototype.keyboardHandler = function(e) {
 
 QuillMentions.prototype._dispatchKeycode = function(code) {
     var callback = KEYS[code];
-    if (callback) callback.call(this);
+    if (callback) {
+        this.quill.setSelection(this.range); // HACK oh noz!
+        callback.call(this);
+    }
 };
 
 
@@ -127,20 +130,30 @@ QuillMentions.prototype.findMention = function findMention() {
  * @method
  */
 QuillMentions.prototype.addMentionHandler = function addMentionHandler(e) {
-    var target = e.target || e.srcElement,
-        insertAt = this.currentMention.index,
-        toInsert = "@"+target.innerText,
-        toFocus = insertAt + toInsert.length + 1;
-
-    this.hide(); // sequencing?
-
-    this.quill.deleteText(insertAt, insertAt + this.currentMention[0].length);
-    this.quill.insertText(insertAt, toInsert, "mention", this.options.mentionClass);
-    this.quill.insertText(insertAt + toInsert.length, " ");
-    this.quill.setSelection(toFocus, toFocus);
+    var target = e.target || e.srcElement;
+    this.addMention(target);
     e.stopPropagation();
 };
 
+/**
+ * @method
+ */
+ QuillMentions.prototype.addMention = function addMention(node) {
+     var insertAt = this.currentMention.index,
+         toInsert = "@"+node.innerText,
+         toFocus = insertAt + toInsert.length + 1;
+
+     this.hide(); // sequencing?
+
+     this.quill.deleteText(insertAt, insertAt + this.currentMention[0].length);
+     this.quill.insertText(insertAt, toInsert, "mention", this.options.mentionClass);
+     this.quill.insertText(insertAt + toInsert.length, " ");
+     this.quill.setSelection(toFocus, toFocus);
+ };
+
+/**
+ * @method
+ */
 QuillMentions.prototype.isMentioning = function() {
     return this.container.className.search(/ql\-is\-mentioning/) !== -1;
 };

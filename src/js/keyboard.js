@@ -1,6 +1,7 @@
 var DOM = require("./utilities/dom"),
     addClass = DOM.addClass,
-    removeClass = DOM.removeClass;
+    removeClass = DOM.removeClass,
+    eventFire = DOM.eventFire;
 
 var SELECTED_CLASS = "ql-mention-item-selected";
 
@@ -39,7 +40,18 @@ function handleUpKey() {
  * @this {QuillMentions}
  */
 function handleEnter() {
+    var nodes,
+        currIndex = this.selectedChoiceIndex,
+        currNode;
 
+    if (currIndex === -1) return;
+    nodes = this.container.querySelectorAll("li");
+    console.log(nodes);
+    if (nodes.length === 0) return;
+    currNode = nodes[currIndex];
+    eventFire(currNode, "click");
+    this.selectedChoiceIndex = -1;
+    
 }
 
 /**

@@ -1,7 +1,7 @@
 module.exports.addClass = addClass;
 module.exports.removeClass = removeClass;
 module.exports.getOlderSiblingsInclusive = getOlderSiblingsInclusive;
-
+module.exports.eventFire = eventFire;
 
 function addClass(node, className) {
     if (!node) return;
@@ -21,4 +21,14 @@ function getOlderSiblingsInclusive(node) {
         node = node.previousSibling;
     }
     return result;
+}
+
+function eventFire(el, etype){
+    if (el.fireEvent) {
+        el.fireEvent('on' + etype);
+    } else {
+        var evObj = document.createEvent('Events');
+        evObj.initEvent(etype, true, false);
+        el.dispatchEvent(evObj);
+    }
 }
