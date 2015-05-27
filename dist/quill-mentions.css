@@ -1,36 +1,41 @@
-.ql-mentions ul, .ql-mentions-static ul {
+.ql-mentions {
+  box-shadow: -1px -1px 2px #ddd, 1px  1px 2px #ddd;
+  display: none;
+}
+.ql-mentions ul {
   list-style-type: none;
   margin: 0;
   padding: 0;
 }
-.ql-mentions ul li, .ql-mentions-static ul li {
+.ql-mentions ul li {
+  background: #fff;
   border-bottom: solid thin #ddd;
   cursor: pointer;
   padding: 8px 12px 8px 12px;
+  -webkit-transform: translateZ(1px);
+  transform: translateZ(1px);
 }
-.ql-mentions ul li:last-child, .ql-mentions-static ul li:last-child {
+.ql-mentions ul li.no-match {
+  pointer-events: none;
+}
+.ql-mentions ul li:last-child {
   border-bottom: none;
 }
-.ql-mentions ul li:hover, .ql-mentions-static ul li:hover {
+.ql-mentions ul li:hover {
   background: #888;
   color: white;
 }
-
-.ql-mentions {
-  border: solid thin #888;
-  padding: 0;
-  position: absolute;
+.ql-is-mentioning.ql-mentions {
+  display: inherit;
 }
 
-.ql-mentions-static {
-  border: solid thin #888;
+.ql-mentions {
+  border: solid 1px #ddd;
+  font-size: 13px;
   padding: 0;
-  position: static;
 }
 
 .ql-mention-item {
   color: #2ba6cb;
   text-decoration: underline;
 }
-
-/*# sourceMappingURL=quill-mentions.css.map */

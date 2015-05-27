@@ -1,15 +1,28 @@
+// mentions styles
 $faux-link: #2ba6cb;
 
 %ql-mentions-base {
+  box-shadow: -1px -1px 2px #ddd,
+               1px  1px 2px #ddd;
+  display: none;
+
   ul {
     list-style-type: none;
     margin: 0;
     padding: 0;
 
     li {
+      background: #fff;
       border-bottom: solid thin #ddd;
       cursor: pointer;
       padding: 8px 12px 8px 12px;
+
+      -webkit-transform: translateZ(1px); // hack... makes the overlay _actually_ overlay text inside the editor. tried using z-index but no dice.
+      transform: translateZ(1px);
+
+      &.no-match {
+        pointer-events: none;
+      }
 
       &:last-child {
         border-bottom: none;
@@ -21,20 +34,15 @@ $faux-link: #2ba6cb;
       }
     }
   }
+  &.ql-is-mentioning {
+    display: inherit;
+  }
 }
 
 .ql-mentions {
-  border: solid thin #888;
+  border: solid 1px #ddd;
+  font-size: 13px;
   padding: 0;
-  position: absolute;
-
-  @extend %ql-mentions-base;
-}
-
-.ql-mentions-static {
-  border: solid thin #888;
-  padding: 0;
-  position: static;
 
   @extend %ql-mentions-base;
 }

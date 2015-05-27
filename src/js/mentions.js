@@ -1,9 +1,11 @@
-var addFormat = require("./format"),
+var addController = require("./controller"),
+    addFormat = require("./format"),
     addSearch = require("./search"),
     addView = require("./view");
 
 var defaultFactory = require("./defaults/defaults");
 
+addController(QuillMentions);
 addFormat(QuillMentions);
 addSearch(QuillMentions);
 addView(QuillMentions);
@@ -31,6 +33,28 @@ function QuillMentions(quill, options) {
     this.hide();
     this.addFormat(); // adds custom format for mentions
     this.addListeners();
+
+    // TODO - (re)move this. just putting it here as a reminder...
+    this.hotKeys = {
+        38: [
+            { // up arrow
+                callback: function() {
+    
+                },
+                key: 38,
+                metaKey: false,
+            },
+            ],
+        40: [
+            { // down arrow
+                callback: function() {
+    
+                },
+                key: 40,
+                metaKey: false,
+            },
+            ],
+    };
 }
 
 /**
@@ -63,7 +87,7 @@ QuillMentions.prototype.textChangeHandler = function textChangeHandler(_delta) {
             that.show();
         });
     }
-    else if (this.container.style.left !== this.options.hideMargin) {
+    else if (this.container.className.search(/ql\-is\-mentioning/) !== -1) {
         this.currentMention = null;
         this.range = null;   // Prevent restoring selection to last saved
         this.hide();
@@ -85,36 +109,23 @@ QuillMentions.prototype.findMention = function findMention() {
     return match;
 };
 
-/**
- * @method
- */
-QuillMentions.prototype.renderCurrentChoices = function renderCurrentChoices() {
-    if (this.currentChoices && this.currentChoices.length) {
-        var choices = this.currentChoices.map(function(choice) {
-            return this.options.choiceTemplate.replace("{{choice}}", choice.name).replace("{{data}}", choice.data);
-        }, this).join("");
-        this.container.innerHTML = this.options.template.replace("{{choices}}", choices);
-    }
-    else {
-        // render helpful message about nothing matching so far...
-        this.container.innerHTML = this.options.template.replace("{{choices}}", "<li><i>Womp womp...</i></li>");
-    }
-};
+
 
 /**
  * @method
  */
 QuillMentions.prototype.addMentionHandler = function addMentionHandler(e) {
-    console.log("Current selection when a choice is clicked: ", this.range);
     var target = e.target || e.srcElement,
         insertAt = this.currentMention.index,
         toInsert = "@"+target.innerText,
         toFocus = insertAt + toInsert.length + 1;
+
+    this.hide(); // sequencing?
+
     this.quill.deleteText(insertAt, insertAt + this.currentMention[0].length);
     this.quill.insertText(insertAt, toInsert, "mention", this.options.mentionClass);
     this.quill.insertText(insertAt + toInsert.length, " ");
     this.quill.setSelection(toFocus, toFocus);
-    this.hide();
     e.stopPropagation();
 };
 

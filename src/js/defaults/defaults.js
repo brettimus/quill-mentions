@@ -7,22 +7,22 @@ var extend = require("../utilities/extend"),
 
 /**
  * @namespace
- * @property {object} ajax - The default ajax configuration.
- * @property {number} choiceMax - The maximum number of possible matches to display.
- * @property {object[]} choices - A static array of possible choices. Ignored if `ajax` is truthy.
- * @property {string} choiceTemplate - A string used as a template for possible choices.
- * @property {string} containerClassName - The class attached to the mentions view container.
- * @property {string} hideMargin - The margin used to hide the popover.
- * @property {regexp} matcher - The regular expression used to trigger Mentions#search
- * @property {string} mentionClass - The class given to inserted mention. Prefixed with `ql-` for now.
- * @property {number} offset - I forogt where this is even used. Probably has to do with calculating position of popover.
- * @property {string} template - A template for the popover, into which possible choices are inserted. 
+ * @prop {object} ajax - The default ajax configuration.
+ * @prop {number} choiceMax - The maximum number of possible matches to display.
+ * @prop {object[]} choices - A static array of possible choices. Ignored if `ajax` is truthy.
+ * @prop {string} choiceTemplate - A string used as a template for possible choices.
+ * @prop {string} containerClassName - The class attached to the mentions view container.
+ * @prop {regexp} matcher - The regular expression used to trigger Mentions#search
+ * @prop {string} mentionClass - Prefixed with `ql-` for now because of how quill handles custom formats. The class given to inserted mention. 
+ * @prop {number} offset - I forogt where this is even used. Probably has to do with calculating position of popover.
+ * @prop {string}
+ * @prop {string} template - A template for the popover, into which possible choices are inserted. 
  */
 var defaults = {
     ajax: false,
-    choiceMax: 10,
+    choiceMax: 6,
     choices: [],
-    choiceTemplate: "<li>{{choice}}</li>",
+    choiceTemplate: "<li data-mention=\"{{data}}\">{{choice}}</li>",
     containerClassName: "ql-mentions",
     hideMargin: '-10000px',
     matcher: /@\w+$/i,
@@ -33,9 +33,9 @@ var defaults = {
 
 /**
  * @namespace
- * @property {function} format - Mapped onto the array of possible matches returned by call to `path`. Should yield the expected interface for data, which is an object with a `name` property.
- * @property {string} path - The path to endpoint we should query for possible matches.
- * @property {string} queryParameter - The name of the query paramater in the url sent to `path`.
+ * @prop {function} format - Mapped onto the array of possible matches returned by call to `path`. Should yield the expected interface for data, which is an object with `name` and `data` properties.
+ * @prop {string} path - The path to endpoint we should query for possible matches.
+ * @prop {string} queryParameter - The name of the query paramater in the url sent to `path`.
  */
 var ajaxDefaults = {
     format: identity,

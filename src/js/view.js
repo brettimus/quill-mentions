@@ -1,49 +1,14 @@
+var getOlderSiblingsInclusive = require("./utilities/dom").getOlderSiblingsInclusive;
+
 module.exports = function addView(QuillMentions) {
 
-    /**
-     * @method
-     * @param {Object} reference
-     * @return {number[]}
-     */
-    QuillMentions.prototype.position = function position(reference) {
-        var referenceBounds,
-            parentBounds,
-            offsetLeft,
-            offsetTop,
-            offsetBottom,
-            left,
-            top;
-
-        if (reference) {
-            // Place tooltip under reference centered
-            // reference might be selection range so must use getBoundingClientRect()
-            referenceBounds = reference.getBoundingClientRect();
-            parentBounds = this.quill.container.getBoundingClientRect();
-            offsetLeft = referenceBounds.left - parentBounds.left;
-            offsetTop = referenceBounds.top - parentBounds.top;
-            offsetBottom = referenceBounds.bottom - parentBounds.bottom;
-            left = offsetLeft + referenceBounds.width/2 - this.container.offsetWidth/2;
-            top = offsetTop + referenceBounds.height + this.options.offset;
-            if (top + this.container.offsetHeight > this.quill.container.offsetHeight) {
-                top = offsetTop - this.container.offsetHeight - this.options.offset;
-            }
-            left = Math.max(0, Math.min(left, this.quill.container.offsetWidth - this.container.offsetWidth));
-            top = Math.max(0, Math.min(top, this.quill.container.offsetHeight - this.container.offsetHeight));
-
-        }
-        else {
-            // Place tooltip in middle of editor viewport
-            left = this.quill.container.offsetWidth/2 - this.container.offsetWidth/2;
-            top = this.quill.container.offsetHeight/2 - this.container.offsetHeight/2;
-        }
-        return [left, top];
-    };
 
     /**
      * @method
      */
     QuillMentions.prototype.hide = function hide() {
-        this.container.style.left = this.options.hideMargin;
+        this.container.className = this.container.className.replace(/ql\-is\-mentioning/g, "");
+        this.container.style.marginTop = "0";
         if (this.range) this.quill.setSelection(this.range);
         this.range = null;
     };
@@ -53,24 +18,37 @@ module.exports = function addView(QuillMentions) {
      * @param {Object} reference
      */
     QuillMentions.prototype.show = function show(reference) {
-        this.range = this.quill.getSelection();
-        reference = reference || this._findMentionNode(this.range);
-        console.log(reference);
-        var position,
-            left,
-            top;
 
-        position = this.position(reference);
-        left = position[0];
-        top = position[1];
-        this.container.style.left = left+"px";
-        this.container.style.top  = top+"px";
-        this.container.focus();
+        var qlContainer = this.quill.container,
+            qlEditor = this.quill.editor.root,
+            qlLines,
+            paddingTop = 10,
+            negMargin = -paddingTop;
+
+
+        this.range = this.quill.getSelection();
+        qlLines = this._findOffsetLines(this.range);
+
+        negMargin += qlEditor.getBoundingClientRect().height;
+        negMargin -= qlLines.reduce(function(total, line) {
+            console.log(line, total);
+            return total + line.getBoundingClientRect().height;
+        }, 0);
+
+        this.container.style.marginTop = "-"+negMargin+'px';
+        this.container.className += " ql-is-mentioning";
+
+        // add keyboard listeners?
+        // or have keyboard listeners filter action based on "ql-is-mentioning";
+
+        this.container.focus(); // has no effect...
     };
 
+
     /**
+     * Return the DOM node that encloses the line on which current mention is being typed.
      * @method
-     * @access private
+     * @private
      * @param {Range} range
      * @return {Node|null}
      */
@@ -81,15 +59,42 @@ module.exports = function addView(QuillMentions) {
             node;
 
         leafAndOffset = this.quill.editor.doc.findLeafAt(range.start, true);
-        console.log("leafAndOffset", leafAndOffset);
         leaf = leafAndOffset[0];
-        offset = leafAndOffset[1];
+        offset = leafAndOffset[1]; // how many chars in front of current range
         if (leaf) node = leaf.node;
         while (node) {
-            console.log("Finding mention node. Looping up...", node);
-            if (node.tagName === "DIV") return node;
+            if (node.tagName === "DIV") break;
             node = node.parentNode;
         }
-        return null;
+        if (!node) return null;
+        return node;
     };
+
+    /**
+     * Return an array of dom nodes corresponding to all lines at or before the line corresponding to the current range.
+     * @method
+     * @private
+     * @param {Range} range
+     * @return {Node[]}
+     */
+    QuillMentions.prototype._findOffsetLines = function(range) {
+        var node = this._findMentionNode(range);
+        return getOlderSiblingsInclusive(node);
+    };
+
+
+    /**
+     * Return the "no matches found" template string
+     * @getter
+     * @private
+     * @return {string}
+     */
+    Object.defineProperty(QuillMentions.prototype, "noMatchFound", {
+        get: function() {
+            var notFound = "<li class='no-match'><i>Ruh roh raggy!</i></li>",
+                template = this.options.template;
+            return template.replace("{{choices}}", notFound);
+        }
+    });
+
 };
