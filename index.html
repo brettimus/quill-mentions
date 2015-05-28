@@ -20,7 +20,7 @@
         <h1>
           Quill Mentions
           <small>
-            Try this totally badass example with emoji.<br>
+            Try this totally badass example with emoji<br>
             :metal:
           </small>
         </h1>
@@ -46,7 +46,9 @@
             </span>
           </div>
           <div class="editor ql-container ql-snow" id="editor">
-            hello there 😅! enter a colon and at least two letters to search for emoji
+            <div>hello there! 😅</div>
+            <div><br></div>
+            <div>enter a colon and at least two letters to search for emoji</div>
           </div>
         </div>
 
@@ -76,7 +78,7 @@
                   'mentions': {
                       choices: emojiChoices,
                       choiceTemplate: "<li>{{data}}</li>",
-                      choiceTemplate: "<li data-display=\"{{data}}\" data-mention=\"\">{{data}} :{{choice}}:</li>",
+                      choiceTemplate: "<li data-display=\"{{data}}\" data-mention=\"\">{{data}} :{{value}}:</li>",
                       matcher: /\:(\w{2,})$/i, // for emoji, calling with :
                       noMatchMessage: "Type a real emoji!",
                       triggerSymbol: ":",

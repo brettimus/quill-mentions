@@ -14,7 +14,8 @@ module.exports = View;
 function View(container, templates, options) {
     this.container = container;
     this.templates = extend({}, templates);
-    this.options = options || {}; // TODO - use Object.assign polyfill
+    this.marginTop = options.marginTop;
+    this.errMessage = options.errMessage;
 }
 
 /**
@@ -28,7 +29,7 @@ View.prototype.render = function(data) {
         err,
         toRender;
     if (!data || !data.length) {
-        err = templates.error.replace("{{message}}", this.options.errMessage);
+        err = templates.error.replace("{{message}}", this.errMessage);
         toRender = templates.list.replace("{{choices}}", err);
         return this._renderError(toRender);
     }
@@ -67,7 +68,7 @@ View.prototype._renderError = function(error) {
  */
 View.prototype._renderLI = function(datum) {
     var result = this.templates.listItem;
-    result = replaceAll(result, "{{choice}}", datum.name); // TODO change .name property name
+    result = replaceAll(result, "{{value}}", datum.name); // TODO change .name property name
     result = replaceAll(result, "{{data}}", datum.data);   // TODO change .data property name
     return result;
 };
@@ -104,7 +105,7 @@ View.prototype.show = function show(quill) {
 
     this.container.style.marginTop = this._getNegativeMargin(quill);
     DOM.addClass(this.container, "ql-is-mentioning"); // TODO - config active class
-    this.container.focus();
+    this.container.focus(); // Does this even do anything? It would if we were using form elements instead of LIs prob
 
     return this;
 };
@@ -155,8 +156,8 @@ View.prototype._findMentionNode = function _findMentionNode(quill) {
 View.prototype._getNegativeMargin = function(quill) {
     var qlEditor = quill.editor.root,
         qlLines,
-        paddingTop = this.paddingTop || 10, // TODO
-        negMargin = -paddingTop,
+        marginTop = this.marginTop,
+        negMargin = -marginTop,
         range;
 
     qlLines = this._findOffsetLines(quill);

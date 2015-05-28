@@ -15,7 +15,7 @@ module.exports = QuillMentions;
  * @param {Object} quill - An instance of `Quill`.
  * @param {Object} [options] - User configuration passed to the mentions module. It's mixed in with defaults.
  * @prop {Quill} quill
- * @prop {DOMNode} container - Container for the popover (a.k.a. the View)
+ * @prop {HTMLElement} container - Container for the popover (a.k.a. the View)
  * @prop {RegExp} matcher - Used to scan contents of editor for mentions.
  * @prop {Bool} isMentioning - Updated with our "mentioning state" changes. 
  */
@@ -51,16 +51,17 @@ function QuillMentions(quill, options) {
  * Sets QuillMentions.view to a View object
  * @method
  * @private
- * @param {Node} container
+ * @param {HTMLElement} container
  * @param {Object} options - Configuration for the view
  */
 QuillMentions.prototype.setView = function(container, options) {
     var templates = {},
-        errMessage = options.noMatchMessage;
+        errMessage = options.noMatchMessage,
+        marginTop = options.marginTop;
     templates.list = options.template;
     templates.listItem = options.choiceTemplate;
     templates.error = options.noMatchTemplate;
-    this.view = new View(container, templates, {errMessage: errMessage});
+    this.view = new View(container, templates, {errMessage: errMessage, marginTop: marginTop });
     return this;
 };
 

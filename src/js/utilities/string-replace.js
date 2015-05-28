@@ -5,7 +5,7 @@ module.exports = {
 };
 
 /**
- * @param {stirng} [options] - RegExp options (like "i"). Defaults to the empty string.
+ * @param {stirng} [options] - RegExp options (like "i").
  **/
 function replaceAll(string, toReplace, replaceWith, options) {
     options = options || "";

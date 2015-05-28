@@ -19,37 +19,56 @@ module.exports = {
 
 /**
  * @constructor
+ * @param {function} formatter - Munges data
+ * @param {View} view
+ * @param {object} options
+ * @prop {function} format - Munges data 
+ * @prop {View} view
+ * @prop {object[]} database - All possible choices for a given mention. 
+ * @prop {number} max - Maximum number of matches to pass to the View.  
  */
 function Controller(formatter, view, options) {
-    this.format = formatter;
-    this.view = view;
-    this.data = options.data;
-    this.max = options.max;
+    this.format   = formatter;
+    this.view     = view;
+    this.database = this.munge(options.data);
+    this.max      = options.max;
 }
 
 /**
  * Looks for match to the qry in the given data.
  * @method
  * @param {string} qry
- * @param {searchCallback} callback - Probably unnecessary...
+ * @param {searchCallback} callback
  */
 Controller.prototype.search = function search(qry, callback) {
-    var data = this.data.filter(function(d) {
-        var qryRE = new RegExp(escapeRegExp(qry), "i");
+    var qryRE = new RegExp(escapeRegExp(qry), "i"),
+        data;
+
+    data = this.database.filter(function(d) {
         return qryRE.test(d.name);
     });
 
-    this.view.render(data.slice(0, this.max)); // IDEA TODO - just don't render if there's no data & no error template
+    this.view.render(data.slice(0, this.max));
     if (callback) callback();
+};
+
+/**
+ * Transforms data to conform to config.
+ * @method
+ * @param {string} qry
+ * @param {searchCallback} callback
+ */
+Controller.prototype.munge = function(data) {
+    return data.map(this.format);
 };
 
 
 /**
  * @constructor
  * @augments Controller
- * @param {Function} formatter - munges callback data
- * @param {View} view
- * @param {Object} options
+ * @prop {string} path - The path from which to request data.
+ * @prop {string} queryParameter - The name of the paramter in the request to Controller~path
+ * @prop {Object} _latestCall - Cached ajax call. Aborted if a new search is made.
  */
 function AJAXController(formatter, view, options) {
     Controller.call(this, formatter, view, options);
@@ -62,7 +81,7 @@ AJAXController.prototype = Object.create(Controller.prototype);
 /**
  * @method
  * @param {String} qry
- * @param {searchCallback} callback - Callback that handles returned JSON data
+ * @param {searchCallback} callback
  */
 AJAXController.prototype.search = function search(qry, callback) {
 
@@ -86,7 +105,7 @@ AJAXController.prototype.search = function search(qry, callback) {
  * @param {array} data
  */
 AJAXController.prototype._callback = function(data) {
-    data = data.slice(0, this.max).map(this.format);
+    data = this.munge(data).slice(0, this.max);
     this.view.render(data);
 };
 
@@ -109,12 +128,12 @@ var extend = require("../utilities/extend"),
  * @prop {string} choiceTemplate - A string used as a template for possible choices.
  * @prop {string} containerClassName - The class attached to the mentions view container.
  * @prop {function} format - Function used by a Controller instance to munge data into expected form. 
- * @prop {boolean} includeTrigger - Whether to prepend triggerSymbol to the inserted mention. 
+ * @prop {boolean} includeTrigger - Whether to prepend triggerSymbol to the inserted mention.
+ * @prop {number} marginTop - Amount of margin to place on top of the popover. (Controls space, in px, between the line and the popover) 
  * @prop {RegExp} matcher - The regular expression used to trigger Controller#search
  * @prop {string} mentionClass - Prefixed with `ql-` for now because of how quill handles custom formats. The class given to inserted mention. 
  * @prop {string} noMatchMessage - A message to display 
  * @prop {string} noMatchTemplate - A template in which to display error message
- * @prop {number} [[NYI]] Amount of padding to place on top of the popover. 
  * @prop {string} template - A template for the popover, into which possible choices are inserted.
  * @prop {string} triggerSymbol - Symbol that triggers the mentioning state.
  */
@@ -122,15 +141,15 @@ var defaults = {
     ajax: false,
     choiceMax: 6,
     choices: [],
-    choiceTemplate: "<li data-display=\"{{choice}}\" data-mention=\"{{data}}\">{{choice}}</li>",
+    choiceTemplate: "<li data-display=\"{{value}}\" data-mention=\"{{data}}\">{{value}}</li>",
     containerClassName: "ql-mentions",
     format: identity,
     includeTrigger: false,
+    marginTop: 10,
     matcher: /@\w+$/i,
     mentionClass: "mention-item",
     noMatchMessage: "Ruh Roh Raggy!",
     noMatchTemplate: "<li class='ql-mention-choice-no-match'><i>{{message}}</i></li>",
-    paddingTop: 10,
     template: '<ul>{{choices}}</ul>',
     triggerSymbol: "@",
 };
@@ -310,7 +329,7 @@ module.exports = QuillMentions;
  * @param {Object} quill - An instance of `Quill`.
  * @param {Object} [options] - User configuration passed to the mentions module. It's mixed in with defaults.
  * @prop {Quill} quill
- * @prop {DOMNode} container - Container for the popover (a.k.a. the View)
+ * @prop {HTMLElement} container - Container for the popover (a.k.a. the View)
  * @prop {RegExp} matcher - Used to scan contents of editor for mentions.
  * @prop {Bool} isMentioning - Updated with our "mentioning state" changes. 
  */
@@ -346,16 +365,17 @@ function QuillMentions(quill, options) {
  * Sets QuillMentions.view to a View object
  * @method
  * @private
- * @param {Node} container
+ * @param {HTMLElement} container
  * @param {Object} options - Configuration for the view
  */
 QuillMentions.prototype.setView = function(container, options) {
     var templates = {},
-        errMessage = options.noMatchMessage;
+        errMessage = options.noMatchMessage,
+        marginTop = options.marginTop;
     templates.list = options.template;
     templates.listItem = options.choiceTemplate;
     templates.error = options.noMatchTemplate;
-    this.view = new View(container, templates, {errMessage: errMessage});
+    this.view = new View(container, templates, {errMessage: errMessage, marginTop: marginTop });
     return this;
 };
 
@@ -674,7 +694,7 @@ module.exports = {
 };
 
 /**
- * @param {stirng} [options] - RegExp options (like "i"). Defaults to the empty string.
+ * @param {stirng} [options] - RegExp options (like "i").
  **/
 function replaceAll(string, toReplace, replaceWith, options) {
     options = options || "";
@@ -700,7 +720,8 @@ module.exports = View;
 function View(container, templates, options) {
     this.container = container;
     this.templates = extend({}, templates);
-    this.options = options || {}; // TODO - use Object.assign polyfill
+    this.marginTop = options.marginTop;
+    this.errMessage = options.errMessage;
 }
 
 /**
@@ -714,7 +735,7 @@ View.prototype.render = function(data) {
         err,
         toRender;
     if (!data || !data.length) {
-        err = templates.error.replace("{{message}}", this.options.errMessage);
+        err = templates.error.replace("{{message}}", this.errMessage);
         toRender = templates.list.replace("{{choices}}", err);
         return this._renderError(toRender);
     }
@@ -753,7 +774,7 @@ View.prototype._renderError = function(error) {
  */
 View.prototype._renderLI = function(datum) {
     var result = this.templates.listItem;
-    result = replaceAll(result, "{{choice}}", datum.name); // TODO change .name property name
+    result = replaceAll(result, "{{value}}", datum.name); // TODO change .name property name
     result = replaceAll(result, "{{data}}", datum.data);   // TODO change .data property name
     return result;
 };
@@ -790,7 +811,7 @@ View.prototype.show = function show(quill) {
 
     this.container.style.marginTop = this._getNegativeMargin(quill);
     DOM.addClass(this.container, "ql-is-mentioning"); // TODO - config active class
-    this.container.focus();
+    this.container.focus(); // Does this even do anything? It would if we were using form elements instead of LIs prob
 
     return this;
 };
@@ -841,8 +862,8 @@ View.prototype._findMentionNode = function _findMentionNode(quill) {
 View.prototype._getNegativeMargin = function(quill) {
     var qlEditor = quill.editor.root,
         qlLines,
-        paddingTop = this.paddingTop || 10, // TODO
-        negMargin = -paddingTop,
+        marginTop = this.marginTop,
+        negMargin = -marginTop,
         range;
 
     qlLines = this._findOffsetLines(quill);
