@@ -17,49 +17,69 @@ module.exports = {
  */
 
 
-/**
- * @constructor
- * @param {function} formatter - Munges data
- * @param {View} view
- * @param {object} options
- * @prop {function} format - Munges data 
- * @prop {View} view
- * @prop {object[]} database - All possible choices for a given mention. 
- * @prop {number} max - Maximum number of matches to pass to the View.  
- */
-function Controller(formatter, view, options) {
+ function Controller(formatter, view, options) {
+     this.format   = formatter;
+     this.view     = view;
+     this.database = this.munge(options.data);
+     this.max      = options.max;
+ }
+
+
+ /**
+  * @interface
+  * @param {function} formatter - Munges data
+  * @param {View} view
+  * @param {object} options
+  * @prop {function} format - Munges data 
+  * @prop {View} view
+  * @prop {number} max - Maximum number of matches to pass to the View.  
+  */
+function AbstractController(formatter, view, options) {
     this.format   = formatter;
     this.view     = view;
-    this.database = this.munge(options.data);
     this.max      = options.max;
 }
 
+ /**
+  * @abstract
+  */
+ AbstractController.prototype.search = function search() {
+    throw new Error("NYI");
+ };
+
+ /**
+  * Transforms data to conform to config.
+  * @method
+  * @param {string} qry
+  * @param {searchCallback} callback
+  */
+ AbstractController.prototype.munge = function(data) {
+     return data.map(this.format);
+ };
+
+
 /**
- * Looks for match to the qry in the given data.
- * @method
- * @param {string} qry
- * @param {searchCallback} callback
+ * @constructor
+ * @prop {object[]} database - All possible choices for a given mention. 
  */
+function Controller(formatter, view, options) {
+    AbstractController.call(this, formatter, view, options);
+    this.database = this.munge(options.data);
+}
+Controller.prototype = Object.create(AbstractController.prototype);
+
 Controller.prototype.search = function search(qry, callback) {
     var qryRE = new RegExp(escapeRegExp(qry), "i"),
         data;
 
     data = this.database.filter(function(d) {
         return qryRE.test(d.value);
+    }).sort(function(d1, d2) {
+        return d1.value.indexOf(qry) - d2.value.indexOf(qry);
     });
 
     this.view.render(data.slice(0, this.max));
     if (callback) callback();
-};
-
-/**
- * Transforms data to conform to config.
- * @method
- * @param {string} qry
- * @param {searchCallback} callback
- */
-Controller.prototype.munge = function(data) {
-    return data.map(this.format);
 };
 
 
@@ -71,12 +91,12 @@ Controller.prototype.munge = function(data) {
  * @prop {Object} _latestCall - Cached ajax call. Aborted if a new search is made.
  */
 function AJAXController(formatter, view, options) {
-    Controller.call(this, formatter, view, options);
+    AbstractController.call(this, formatter, view, options);
     this.path = options.path;
     this.queryParameter = options.queryParameter;
     this._latestCall = null;
 }
-AJAXController.prototype = Object.create(Controller.prototype);
+AJAXController.prototype = Object.create(AbstractController.prototype);
 
 /**
  * @method
