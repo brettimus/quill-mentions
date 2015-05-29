@@ -222,6 +222,10 @@ QuillMentions.prototype.findMention = function findMention() {
          toInsert = (this.includeTrigger ? this.triggerSymbol : "") + node.dataset.display,
          toFocus = insertAt + toInsert.length + 1;
 
+    if (this.currentMention[1] && this.currentMention[1].length) {
+        insertAt += this.currentMention[1].length;
+        toFocus += this.currentMention[1].length;
+    }
 
      this.quill.deleteText(insertAt, insertAt + this.currentMention[0].length);
      this.quill.insertText(insertAt, toInsert, "mention", this.mentionClass+"-"+node.dataset.mention);
