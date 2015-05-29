@@ -45,7 +45,7 @@ Controller.prototype.search = function search(qry, callback) {
         data;
 
     data = this.database.filter(function(d) {
-        return qryRE.test(d.name);
+        return qryRE.test(d.value);
     });
 
     this.view.render(data.slice(0, this.max));
@@ -706,7 +706,8 @@ function replaceAll(string, toReplace, replaceWith, options) {
 },{"./regexp":10}],12:[function(require,module,exports){
 var DOM = require("./utilities/dom"),
     extend = require("./utilities/extend"),
-    replaceAll = require("./utilities/string-replace").all;
+    replaceAll = require("./utilities/string-replace").all,
+    escapeRegExp = require("./utilities/regexp").escapeRegExp;
 
 module.exports = View;
 
@@ -767,15 +768,33 @@ View.prototype._renderError = function(error) {
 
 
 /**
- * Renders a datump into a listItem template
+ * Renders listItem template with a datum as the context
  * @method
  * @private
- * @param {string} error - Message to paste into the popover (most likely html, but text works too!)
+ * @param {object} datum - A piece of data 
  */
 View.prototype._renderLI = function(datum) {
-    var result = this.templates.listItem;
-    result = replaceAll(result, "{{value}}", datum.name); // TODO change .name property name
-    result = replaceAll(result, "{{data}}", datum.data);   // TODO change .data property name
+    var template = this.templates.listItem;
+    return this._renderWithContext(template, datum);
+};
+
+/**
+ * Renders a template given the context of an object
+ * @method
+ * @private
+ * @param {string} template
+ * @param {object} o - Context for a template string.
+ */
+View.prototype._renderWithContext = function(template, o) {
+    var prop,
+        result = template;
+
+    for (prop in o) {
+        if (o.hasOwnProperty(prop)) {
+            result = replaceAll(result, "{{"+prop+"}}", o[prop]);
+        }
+    }
+
     return result;
 };
 
@@ -889,4 +908,4 @@ View.prototype._nodeHeight = function(node) {
 function QuillEditorView() {
     throw new Error("NYI");
 }
-},{"./utilities/dom":7,"./utilities/extend":8,"./utilities/string-replace":11}]},{},[1,2,3,4,5,6,7,8,9,10,11,12]);
+},{"./utilities/dom":7,"./utilities/extend":8,"./utilities/regexp":10,"./utilities/string-replace":11}]},{},[1,2,3,4,5,6,7,8,9,10,11,12]);

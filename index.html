@@ -62,8 +62,14 @@
 
         function loadEditor(data) {
 
-            var emojiChoices = data.map(function(em) { 
-                return {data: em.emoji, name: em.aliases[0]};
+            var emojiChoices = [];
+
+            data.forEach(function(em) {
+                if (em.aliases && em.aliases.length > 0) {
+                    em.aliases.forEach(function(alias) {
+                        emojiChoices.push({data: em.emoji, value: alias, alias: alias});
+                    });
+                }
             });
 
             console.log(emojiChoices);
@@ -78,7 +84,7 @@
                   'mentions': {
                       choices: emojiChoices,
                       choiceTemplate: "<li>{{data}}</li>",
-                      choiceTemplate: "<li data-display=\"{{data}}\" data-mention=\"\">{{data}} :{{value}}:</li>",
+                      choiceTemplate: "<li data-display=\"{{data}}\">{{data}} :{{alias}}:</li>",
                       matcher: /\:(\w{2,})$/i, // for emoji, calling with :
                       noMatchMessage: "Type a real emoji!",
                       triggerSymbol: ":",

@@ -1,6 +1,7 @@
 var DOM = require("./utilities/dom"),
     extend = require("./utilities/extend"),
-    replaceAll = require("./utilities/string-replace").all;
+    replaceAll = require("./utilities/string-replace").all,
+    escapeRegExp = require("./utilities/regexp").escapeRegExp;
 
 module.exports = View;
 
@@ -61,15 +62,33 @@ View.prototype._renderError = function(error) {
 
 
 /**
- * Renders a datump into a listItem template
+ * Renders listItem template with a datum as the context
  * @method
  * @private
- * @param {string} error - Message to paste into the popover (most likely html, but text works too!)
+ * @param {object} datum - A piece of data 
  */
 View.prototype._renderLI = function(datum) {
-    var result = this.templates.listItem;
-    result = replaceAll(result, "{{value}}", datum.name); // TODO change .name property name
-    result = replaceAll(result, "{{data}}", datum.data);   // TODO change .data property name
+    var template = this.templates.listItem;
+    return this._renderWithContext(template, datum);
+};
+
+/**
+ * Renders a template given the context of an object
+ * @method
+ * @private
+ * @param {string} template
+ * @param {object} o - Context for a template string.
+ */
+View.prototype._renderWithContext = function(template, o) {
+    var prop,
+        result = template;
+
+    for (prop in o) {
+        if (o.hasOwnProperty(prop)) {
+            result = replaceAll(result, "{{"+prop+"}}", o[prop]);
+        }
+    }
+
     return result;
 };
 

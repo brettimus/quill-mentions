@@ -44,7 +44,7 @@ Controller.prototype.search = function search(qry, callback) {
         data;
 
     data = this.database.filter(function(d) {
-        return qryRE.test(d.name);
+        return qryRE.test(d.value);
     });
 
     this.view.render(data.slice(0, this.max));
