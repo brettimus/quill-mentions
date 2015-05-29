@@ -33,10 +33,14 @@
 }
 
 .ql-mention-no-match {
-  padding: 6px 12px;
+  background: #fff;
+  box-shadow: -1px -1px 1px #bbb, 1px  1px 1px #bbb, -1px  1px 1px #bbb, 1px -1px 1px #bbb;
+  padding: 8px 12px 8px 8px;
   pointer-events: none;
   -webkit-transform: translateZ(1px);
   transform: translateZ(1px);
 }
-
-/*# sourceMappingURL=quill-mentions.css.map */
+.ql-mention-no-match i {
+  border-left: solid 2px #df928e;
+  padding-left: 6px;
+}

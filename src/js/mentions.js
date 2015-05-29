@@ -6,7 +6,8 @@ var AJAXController = require("./controller").AJAXController,
 
 var extend = require("./utilities/extend"),
     defaultFactory = require("./defaults/defaults"), // keep in defaults so we can write specific defaults for each object
-    KEYS = require("./keyboard");
+    KEYUP = require("./keyboard").keyup,
+    KEYDOWN = require("./keyboard").keydown;
 
 module.exports = QuillMentions;
 
@@ -17,7 +18,6 @@ module.exports = QuillMentions;
  * @prop {Quill} quill
  * @prop {HTMLElement} container - Container for the popover (a.k.a. the View)
  * @prop {RegExp} matcher - Used to scan contents of editor for mentions.
- * @prop {Bool} isMentioning - Updated with our "mentioning state" changes. 
  */
 function QuillMentions(quill, options) {
 
@@ -29,23 +29,23 @@ function QuillMentions(quill, options) {
     this.includeTrigger = modOptions.includeTrigger;
     this.matcher = modOptions.matcher;
     this.mentionClass = modOptions.mentionClass;
-    this.isMentioning = false;
     this.currentMention = null;
 
     this.selectedChoiceIndex = -1;
-
-    // this.container = container; // [TODO] see if we can destroy this reference. right now KEYs depends on it
 
     this.setView(container, modOptions)
         .setController(modOptions)
         .listenTextChange(quill)
         .listenSelectionChange(quill)
-        .listenHotKeys(quill)
         .listenClick(container)
-        .listenKeydown(quill)
         .addFormat();
 
+    if (modOptions.hotkeys) {
+        this.listenHotKeys(quill);
+    }
+
     this._cachedRange = null;
+    this.charSinceMention = 0;
 }
 
 /**
@@ -101,16 +101,16 @@ QuillMentions.prototype.listenTextChange = function listenTextChange(quill) {
     quill.on(eventName, textChangeHandler.bind(this));
     return this;
 
-    function textChangeHandler(_, source) {
+    function textChangeHandler(delta, source) {
         if (source === "api") return;
         var mention = this.findMention(),
             query,
             _this;
-            
+
         if (mention) {
-            this._cachedRange = quill.getSelection();
             _this = this;
-            this.isMentioning = true;
+            this.charSinceMention = 0;
+            this._cachedRange = quill.getSelection();
             this.currentMention = mention;
             query = mention[0].replace(this.triggerSymbol, "");
 
@@ -119,14 +119,8 @@ QuillMentions.prototype.listenTextChange = function listenTextChange(quill) {
             });
         }
         else {
-            // this.isMentioning = false; // this was causing ISSUES
+            this.charSinceMention++;
             this.view.hide();
-
-
-            //
-            // NB - i dont' know what these do but i'm keeping them in here in case shit goes awry
-            // this.currentMention = null; // DANGER HACK TODO NOOOO
-            // this.range = null;   // Prevent restoring selection to last saved
         }
     }
 };
@@ -143,10 +137,7 @@ QuillMentions.prototype.listenSelectionChange = function(quill) {
     return this;
 
     function selectionChangeHandler(range) {
-        if (!range) {
-            this.view.hide();
-            quill.setSelection(null); // this is unnecessary right?
-        }
+        if (!range) this.view.hide();
     }
 };
 
@@ -158,27 +149,31 @@ QuillMentions.prototype.listenSelectionChange = function(quill) {
  */
 QuillMentions.prototype.listenHotKeys = function(quill) {
     quill.container
+        .addEventListener('keydown',
+                           keydownHandler.bind(this)); // TIL keypress is intended for keys that normally produce a character
+
+    quill.container
         .addEventListener('keyup',
-                           keyboardHandler.bind(this),
-                           false); // TIL keypress is intended for keys that normally produce a character
+                           keyupHandler.bind(this));
+
     return this;
 
-    function keyboardHandler(event) {
+    function keydownHandler(event) {
         var code = event.keyCode || event.which;
-        if (this.isMentioning || code === 13) { // need special logic for enter key :sob:
-            dispatch.call(this, code);
-            event.stopPropagation();
-            event.preventDefault();
+        if (!this.view.isHidden()) { // need special logic for enter key :sob:
+            if (KEYDOWN[code]) {
+                KEYDOWN[code].call(this);
+                event.stopPropagation();
+                event.preventDefault();
+            }
         }
     }
-
-    function dispatch(code) {
-        var callback = KEYS[code];
-        if (callback) {
-            if (code !== 13) { // HACK - ughhhh
-                // quill.setSelection(this._cachedRange); // another HACK oh noz! todo bad icky
+    function keyupHandler(event) {
+        var code = event.keyCode || event.which;
+        if (!this.view.isHidden() || this.charSinceMention === 1) { // this weird if condition solve an issue where hitting enter would hide the view and we wouldn't be able to insert the mention...
+            if (KEYUP[code]) {
+                KEYUP[code].call(this);
             }
-            callback.call(this);
         }
     }
 };
@@ -197,32 +192,10 @@ QuillMentions.prototype.listenClick = function(elt) {
     /** Wraps the QuillMentions~addMention method */
     function addMention(event) {
         var target = event.target || event.srcElement;
-        console.log(target);
-        if (target.tagName.toLowerCase() === "li") { // TODO - this is bad news... but adding a pointer-event: none; to the error message list item does not work bc i'm using bubbling to capture click events in the first place and oh my garsh is this a long comment...
+        if (target.tagName.toLowerCase() === "li") {
             this.addMention(target);
         }
         event.stopPropagation();
-    }
-};
-
-/**
- * Listens for a click or touchend event on the View.
- * @method
- * @param {HTMLElement} elt
- */
-QuillMentions.prototype.listenKeydown = function(quill) {
-
-    quill.container.addEventListener("keydown", disableCursor.bind(this));
-    return this;
-
-    function disableCursor(event) {
-        // var target = event.target || event.srcElement;
-        if (this.view.isMentioning()) {
-            console.log("really?");
-            event.preventDefault();
-            event.stopPropagation();
-        }
-        return true;
     }
 };
 
@@ -255,8 +228,7 @@ QuillMentions.prototype.findMention = function findMention() {
      this.quill.insertText(insertAt + toInsert.length, " ");
      this.quill.setSelection(toFocus, toFocus);
 
-     this.isMentioning = false;
-     this.view.hide(); // sequencing?
+     this.view.hide();
  };
 
 

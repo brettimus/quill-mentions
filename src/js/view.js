@@ -31,35 +31,14 @@ View.prototype.render = function(data) {
         toRender;
     if (!data || !data.length) {
         err = templates.error.replace("{{message}}", this.errMessage);
-        toRender = templates.list.replace("{{choices}}", err);
-        return this._renderError(toRender);
+        this.container.innerHTML = err;
     }
-
-    items = data.map(this._renderLI, this).join("");
-    toRender = templates.list.replace("{{choices}}", items);
-    return this._renderSucess(toRender);
-};
-
-/**
- * Renders list item data to the list item template
- * @method
- * @param {array} data
- */
-View.prototype._renderSucess = function(html) {
-    this.container.innerHTML = html;
+    else {
+        items = data.map(this._renderLI, this).join("");
+        this.container.innerHTML = templates.list.replace("{{choices}}", items);
+    }
     return this;
 };
-
-/**
- * Renders the error template
- * @method
- * @param {string} error - Message to paste into the popover (most likely html, but text works too!)
- */
-View.prototype._renderError = function(error) {
-    this.container.innerHTML = error;
-    return this;
-};
-
 
 /**
  * Renders listItem template with a datum as the context
@@ -103,6 +82,22 @@ View.prototype.hide = function hide(quill, range) {
     this.container.style.marginTop = "0";
     if (range) quill.setSelection(range);
     return this;
+};
+
+/**
+ * @method
+ * @returns {HTMLElement[]}
+ */
+View.prototype.getMatches = function getMatches() {
+    return this.container.querySelectorAll("li");
+};
+
+/**
+ * @method
+ * @returns {HTMLElement[]}
+ */
+View.prototype.hasMatches = function hasMatches() {
+    return this.getMatches().length > 0;
 };
 
 /**

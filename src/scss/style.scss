@@ -1,5 +1,6 @@
 // mentions styles
 $faux-link: #2ba6cb;
+$warning-color: #DF928E;
 
 @mixin translate-z($n) {
   -webkit-transform: translateZ($n); // hack... makes the overlay _actually_ overlay text inside the editor. tried using z-index but no dice.
@@ -49,10 +50,20 @@ $faux-link: #2ba6cb;
 }
 
 .ql-mention-no-match {
-  padding: 6px 12px;
+  background: #fff;
+  box-shadow: -1px -1px 1px #bbb,
+               1px  1px 1px #bbb,
+              -1px  1px 1px #bbb,
+               1px -1px 1px #bbb;
+  padding: 8px 12px 8px 8px;
   pointer-events: none;
 
   @include translate-z(1px);
+
+  i {
+    border-left: solid 2px $warning-color;
+    padding-left: 6px;
+  }
 }
 
 [class^="ql-mention-item"] {

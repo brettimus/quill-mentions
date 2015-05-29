@@ -12,7 +12,8 @@ var extend = require("../utilities/extend"),
  * @prop {object[]} choices - A static array of possible choices. Ignored if `ajax` is truthy.
  * @prop {string} choiceTemplate - A string used as a template for possible choices.
  * @prop {string} containerClassName - The class attached to the mentions view container.
- * @prop {function} format - Function used by a Controller instance to munge data into expected form. 
+ * @prop {function} format - Function used by a Controller instance to munge data into expected form.
+ * @prop {boolean} hotkeys - If false, disables navigating the popover with the keyboard.
  * @prop {boolean} includeTrigger - Whether to prepend triggerSymbol to the inserted mention.
  * @prop {number} marginTop - Amount of margin to place on top of the popover. (Controls space, in px, between the line and the popover) 
  * @prop {RegExp} matcher - The regular expression used to trigger Controller#search
@@ -29,6 +30,7 @@ var defaults = {
     choiceTemplate: "<li data-display=\"{{value}}\" data-mention=\"{{data}}\">{{value}}</li>",
     containerClassName: "ql-mentions",
     format: identity,
+    hotkeys: true,
     includeTrigger: false,
     marginTop: 10,
     matcher: /@\w+$/i,
