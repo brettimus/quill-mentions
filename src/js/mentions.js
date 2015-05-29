@@ -42,6 +42,7 @@ function QuillMentions(quill, options) {
         .listenSelectionChange(quill)
         .listenHotKeys(quill)
         .listenClick(container)
+        .listenKeydown(quill)
         .addFormat();
 
     this._cachedRange = null;
@@ -200,6 +201,24 @@ QuillMentions.prototype.listenClick = function(elt) {
         if (target.tagName.toLowerCase() === "li") { // TODO - this is bad news... but adding a pointer-event: none; to the error message list item does not work bc i'm using bubbling to capture click events in the first place and oh my garsh is this a long comment...
             this.addMention(target);
         }
+        event.stopPropagation();
+    }
+};
+
+/**
+ * Listens for a click or touchend event on the View.
+ * @method
+ * @param {HTMLElement} elt
+ */
+QuillMentions.prototype.listenKeydown = function(quill) {
+
+    quill.container.addEventListener("keydown", disableCursor.bind(this));
+    return this;
+
+    function disableCursor(event) {
+        // var target = event.target || event.srcElement;
+        console.log("hey");
+        event.preventDefault();
         event.stopPropagation();
     }
 };

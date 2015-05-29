@@ -1,6 +1,11 @@
 // mentions styles
 $faux-link: #2ba6cb;
 
+@mixin translate-z($n) {
+  -webkit-transform: translateZ($n); // hack... makes the overlay _actually_ overlay text inside the editor. tried using z-index but no dice.
+  transform: translateZ($n); 
+}
+
 %ql-mentions-base {
   box-shadow: -1px -1px 2px #ddd,
                1px  1px 2px #ddd;
@@ -15,10 +20,9 @@ $faux-link: #2ba6cb;
       background: #fff;
       border-bottom: solid thin #ddd;
       cursor: pointer;
-      padding: 8px 12px 8px 12px;
+      padding: 8px 12px;
 
-      -webkit-transform: translateZ(1px); // hack... makes the overlay _actually_ overlay text inside the editor. tried using z-index but no dice.
-      transform: translateZ(1px);
+      @include translate-z(1px);
 
       &.ql-mention-choice-selected,
       &:hover {
@@ -44,8 +48,11 @@ $faux-link: #2ba6cb;
   @extend %ql-mentions-base;
 }
 
-.ql-mention-choice-no-match {
+.ql-mention-no-match {
+  padding: 6px 12px;
   pointer-events: none;
+
+  @include translate-z(1px);
 }
 
 [class^="ql-mention-item"] {

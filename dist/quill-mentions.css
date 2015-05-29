@@ -11,7 +11,7 @@
   background: #fff;
   border-bottom: solid thin #ddd;
   cursor: pointer;
-  padding: 8px 12px 8px 12px;
+  padding: 8px 12px;
   -webkit-transform: translateZ(1px);
   transform: translateZ(1px);
 }
@@ -32,8 +32,11 @@
   padding: 0;
 }
 
-.ql-mention-choice-no-match {
+.ql-mention-no-match {
+  padding: 6px 12px;
   pointer-events: none;
+  -webkit-transform: translateZ(1px);
+  transform: translateZ(1px);
 }
 
 /*# sourceMappingURL=quill-mentions.css.map */

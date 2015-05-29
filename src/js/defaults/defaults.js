@@ -34,7 +34,7 @@ var defaults = {
     matcher: /@\w+$/i,
     mentionClass: "mention-item",
     noMatchMessage: "Ruh Roh Raggy!",
-    noMatchTemplate: "<li class='ql-mention-choice-no-match'><i>{{message}}</i></li>",
+    noMatchTemplate: "<div class='ql-mention-no-match'><i>{{message}}</i></div>",
     template: '<ul>{{choices}}</ul>',
     triggerSymbol: "@",
 };
