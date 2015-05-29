@@ -217,9 +217,12 @@ QuillMentions.prototype.listenKeydown = function(quill) {
 
     function disableCursor(event) {
         // var target = event.target || event.srcElement;
-        console.log("hey");
-        event.preventDefault();
-        event.stopPropagation();
+        if (this.view.isMentioning()) {
+            console.log("really?");
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        return true;
     }
 };
 
