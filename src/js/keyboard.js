@@ -18,20 +18,22 @@ var SELECTED_CLASS = "ql-mention-choice-selected";
   * @prop {Number} 38 - Handler for the up arrow key.
   * @prop {Number} 40 - Handler for the down arrow key.
   */
-var KEYS = {
-    13: handleEnter,
-    27: handleEscape,
-    38: handleUpKey,
-    40: handleDownKey,
+var keydown = {
+    27: keydownEscape,
+    38: keydownUpKey,
+    40: keydownDownKey,
+};
+
+var keyup = {
+    13: keyupEnter,
 };
 
 /**
  * @method
  * @this {QuillMentions}
  */
-function handleDownKey() {
+function keydownDownKey() {
     if (this.view.isHidden()) return;
-    this.quill.setSelection(this._cachedRange); // another HACK oh noz! todo bad icky
     _moveSelection.call(this, 1);
 }
 
@@ -39,31 +41,25 @@ function handleDownKey() {
  * @method
  * @this {QuillMentions}
  */
-function handleUpKey() {
+function keydownUpKey() {
     if (this.view.isHidden()) return;
-    this.quill.setSelection(this._cachedRange); // another HACK oh noz! todo bad icky
     _moveSelection.call(this, -1);
 }
-
-
 
 /**
  * @method
  * @this {QuillMentions}
  */
-function handleEnter() {
-    if (!this.isMentioning) {
-        this.selectedChoiceIndex = -1;
-        console.log("grrrr");
-    }
+function keyupEnter() {
     var nodes,
         currIndex = this.selectedChoiceIndex,
         currNode;
 
-    console.log("handling enter");
     if (currIndex === -1) return;
-    nodes = this.view.container.querySelectorAll("li");
-    if (nodes.length === 0) return;
+    if (!this.view.hasMatches()) return;
+
+    this.quill.setSelection(this._cachedRange);
+    nodes = this.view.getMatches();
     currNode = nodes[currIndex];
     this.addMention(currNode);
     this.selectedChoiceIndex = -1;
@@ -73,9 +69,8 @@ function handleEnter() {
  * @method
  * @this {QuillMentions}
  */
-function handleEscape() {
+function keydownEscape() {
     this.view.hide();
-    this.isMentioning = false;
     this.selectedChoiceIndex = -1;
     this.quill.focus();
 }
@@ -118,11 +113,11 @@ function _moveSelection(steps) {
 }
 
 function _normalizeIndex(i, modulo) {
-    if (modulo <= 0) throw new Error("WTF are you doing? _normalizeIndex needs a nonnegative, nonzero modulo.");
+    if (modulo <= 0) throw new Error("TF are you doing? _normalizeIndex needs a nonnegative, nonzero modulo.");
     while (i < 0) {
         i += modulo;
     }
     return i % modulo;
 }
 
-module.exports = KEYS;
+module.exports = {keyup: keyup, keydown: keydown};

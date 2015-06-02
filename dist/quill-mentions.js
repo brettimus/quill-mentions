@@ -147,7 +147,8 @@ var extend = require("../utilities/extend"),
  * @prop {object[]} choices - A static array of possible choices. Ignored if `ajax` is truthy.
  * @prop {string} choiceTemplate - A string used as a template for possible choices.
  * @prop {string} containerClassName - The class attached to the mentions view container.
- * @prop {function} format - Function used by a Controller instance to munge data into expected form. 
+ * @prop {function} format - Function used by a Controller instance to munge data into expected form.
+ * @prop {boolean} hotkeys - If false, disables navigating the popover with the keyboard.
  * @prop {boolean} includeTrigger - Whether to prepend triggerSymbol to the inserted mention.
  * @prop {number} marginTop - Amount of margin to place on top of the popover. (Controls space, in px, between the line and the popover) 
  * @prop {RegExp} matcher - The regular expression used to trigger Controller#search
@@ -164,6 +165,7 @@ var defaults = {
     choiceTemplate: "<li data-display=\"{{value}}\" data-mention=\"{{data}}\">{{value}}</li>",
     containerClassName: "ql-mentions",
     format: identity,
+    hotkeys: true,
     includeTrigger: false,
     marginTop: 10,
     matcher: /@\w+$/i,
@@ -223,20 +225,22 @@ var SELECTED_CLASS = "ql-mention-choice-selected";
   * @prop {Number} 38 - Handler for the up arrow key.
   * @prop {Number} 40 - Handler for the down arrow key.
   */
-var KEYS = {
-    13: handleEnter,
-    27: handleEscape,
-    38: handleUpKey,
-    40: handleDownKey,
+var keydown = {
+    27: keydownEscape,
+    38: keydownUpKey,
+    40: keydownDownKey,
+};
+
+var keyup = {
+    13: keyupEnter,
 };
 
 /**
  * @method
  * @this {QuillMentions}
  */
-function handleDownKey() {
+function keydownDownKey() {
     if (this.view.isHidden()) return;
-    this.quill.setSelection(this._cachedRange); // another HACK oh noz! todo bad icky
     _moveSelection.call(this, 1);
 }
 
@@ -244,31 +248,25 @@ function handleDownKey() {
  * @method
  * @this {QuillMentions}
  */
-function handleUpKey() {
+function keydownUpKey() {
     if (this.view.isHidden()) return;
-    this.quill.setSelection(this._cachedRange); // another HACK oh noz! todo bad icky
     _moveSelection.call(this, -1);
 }
-
-
 
 /**
  * @method
  * @this {QuillMentions}
  */
-function handleEnter() {
-    if (!this.isMentioning) {
-        this.selectedChoiceIndex = -1;
-        console.log("grrrr");
-    }
+function keyupEnter() {
     var nodes,
         currIndex = this.selectedChoiceIndex,
         currNode;
 
-    console.log("handling enter");
     if (currIndex === -1) return;
-    nodes = this.view.container.querySelectorAll("li");
-    if (nodes.length === 0) return;
+    if (!this.view.hasMatches()) return;
+
+    this.quill.setSelection(this._cachedRange);
+    nodes = this.view.getMatches();
     currNode = nodes[currIndex];
     this.addMention(currNode);
     this.selectedChoiceIndex = -1;
@@ -278,9 +276,8 @@ function handleEnter() {
  * @method
  * @this {QuillMentions}
  */
-function handleEscape() {
+function keydownEscape() {
     this.view.hide();
-    this.isMentioning = false;
     this.selectedChoiceIndex = -1;
     this.quill.focus();
 }
@@ -323,14 +320,14 @@ function _moveSelection(steps) {
 }
 
 function _normalizeIndex(i, modulo) {
-    if (modulo <= 0) throw new Error("WTF are you doing? _normalizeIndex needs a nonnegative, nonzero modulo.");
+    if (modulo <= 0) throw new Error("TF are you doing? _normalizeIndex needs a nonnegative, nonzero modulo.");
     while (i < 0) {
         i += modulo;
     }
     return i % modulo;
 }
 
-module.exports = KEYS;
+module.exports = {keyup: keyup, keydown: keydown};
 },{"./utilities/dom":7}],5:[function(require,module,exports){
 /** @module mentions */
 
@@ -340,7 +337,8 @@ var AJAXController = require("./controller").AJAXController,
 
 var extend = require("./utilities/extend"),
     defaultFactory = require("./defaults/defaults"), // keep in defaults so we can write specific defaults for each object
-    KEYS = require("./keyboard");
+    KEYUP = require("./keyboard").keyup,
+    KEYDOWN = require("./keyboard").keydown;
 
 module.exports = QuillMentions;
 
@@ -351,7 +349,6 @@ module.exports = QuillMentions;
  * @prop {Quill} quill
  * @prop {HTMLElement} container - Container for the popover (a.k.a. the View)
  * @prop {RegExp} matcher - Used to scan contents of editor for mentions.
- * @prop {Bool} isMentioning - Updated with our "mentioning state" changes. 
  */
 function QuillMentions(quill, options) {
 
@@ -363,23 +360,23 @@ function QuillMentions(quill, options) {
     this.includeTrigger = modOptions.includeTrigger;
     this.matcher = modOptions.matcher;
     this.mentionClass = modOptions.mentionClass;
-    this.isMentioning = false;
     this.currentMention = null;
 
     this.selectedChoiceIndex = -1;
-
-    // this.container = container; // [TODO] see if we can destroy this reference. right now KEYs depends on it
 
     this.setView(container, modOptions)
         .setController(modOptions)
         .listenTextChange(quill)
         .listenSelectionChange(quill)
-        .listenHotKeys(quill)
         .listenClick(container)
-        .listenKeydown(quill)
         .addFormat();
 
+    if (modOptions.hotkeys) {
+        this.listenHotKeys(quill);
+    }
+
     this._cachedRange = null;
+    this.charSinceMention = 0;
 }
 
 /**
@@ -435,16 +432,16 @@ QuillMentions.prototype.listenTextChange = function listenTextChange(quill) {
     quill.on(eventName, textChangeHandler.bind(this));
     return this;
 
-    function textChangeHandler(_, source) {
+    function textChangeHandler(delta, source) {
         if (source === "api") return;
         var mention = this.findMention(),
             query,
             _this;
-            
+
         if (mention) {
-            this._cachedRange = quill.getSelection();
             _this = this;
-            this.isMentioning = true;
+            this.charSinceMention = 0;
+            this._cachedRange = quill.getSelection();
             this.currentMention = mention;
             query = mention[0].replace(this.triggerSymbol, "");
 
@@ -453,14 +450,8 @@ QuillMentions.prototype.listenTextChange = function listenTextChange(quill) {
             });
         }
         else {
-            // this.isMentioning = false; // this was causing ISSUES
+            this.charSinceMention++;
             this.view.hide();
-
-
-            //
-            // NB - i dont' know what these do but i'm keeping them in here in case shit goes awry
-            // this.currentMention = null; // DANGER HACK TODO NOOOO
-            // this.range = null;   // Prevent restoring selection to last saved
         }
     }
 };
@@ -477,10 +468,7 @@ QuillMentions.prototype.listenSelectionChange = function(quill) {
     return this;
 
     function selectionChangeHandler(range) {
-        if (!range) {
-            this.view.hide();
-            quill.setSelection(null); // this is unnecessary right?
-        }
+        if (!range) this.view.hide();
     }
 };
 
@@ -492,27 +480,31 @@ QuillMentions.prototype.listenSelectionChange = function(quill) {
  */
 QuillMentions.prototype.listenHotKeys = function(quill) {
     quill.container
+        .addEventListener('keydown',
+                           keydownHandler.bind(this)); // TIL keypress is intended for keys that normally produce a character
+
+    quill.container
         .addEventListener('keyup',
-                           keyboardHandler.bind(this),
-                           false); // TIL keypress is intended for keys that normally produce a character
+                           keyupHandler.bind(this));
+
     return this;
 
-    function keyboardHandler(event) {
+    function keydownHandler(event) {
         var code = event.keyCode || event.which;
-        if (this.isMentioning || code === 13) { // need special logic for enter key :sob:
-            dispatch.call(this, code);
-            event.stopPropagation();
-            event.preventDefault();
+        if (!this.view.isHidden()) { // need special logic for enter key :sob:
+            if (KEYDOWN[code]) {
+                KEYDOWN[code].call(this);
+                event.stopPropagation();
+                event.preventDefault();
+            }
         }
     }
-
-    function dispatch(code) {
-        var callback = KEYS[code];
-        if (callback) {
-            if (code !== 13) { // HACK - ughhhh
-                // quill.setSelection(this._cachedRange); // another HACK oh noz! todo bad icky
+    function keyupHandler(event) {
+        var code = event.keyCode || event.which;
+        if (!this.view.isHidden() || this.charSinceMention === 1) { // this weird if condition solve an issue where hitting enter would hide the view and we wouldn't be able to insert the mention...
+            if (KEYUP[code]) {
+                KEYUP[code].call(this);
             }
-            callback.call(this);
         }
     }
 };
@@ -531,28 +523,9 @@ QuillMentions.prototype.listenClick = function(elt) {
     /** Wraps the QuillMentions~addMention method */
     function addMention(event) {
         var target = event.target || event.srcElement;
-        console.log(target);
-        if (target.tagName.toLowerCase() === "li") { // TODO - this is bad news... but adding a pointer-event: none; to the error message list item does not work bc i'm using bubbling to capture click events in the first place and oh my garsh is this a long comment...
+        if (target.tagName.toLowerCase() === "li") {
             this.addMention(target);
         }
-        event.stopPropagation();
-    }
-};
-
-/**
- * Listens for a click or touchend event on the View.
- * @method
- * @param {HTMLElement} elt
- */
-QuillMentions.prototype.listenKeydown = function(quill) {
-
-    quill.container.addEventListener("keydown", disableCursor.bind(this));
-    return this;
-
-    function disableCursor(event) {
-        // var target = event.target || event.srcElement;
-        console.log("hey");
-        event.preventDefault();
         event.stopPropagation();
     }
 };
@@ -586,8 +559,7 @@ QuillMentions.prototype.findMention = function findMention() {
      this.quill.insertText(insertAt + toInsert.length, " ");
      this.quill.setSelection(toFocus, toFocus);
 
-     this.isMentioning = false;
-     this.view.hide(); // sequencing?
+     this.view.hide();
  };
 
 
@@ -776,35 +748,14 @@ View.prototype.render = function(data) {
         toRender;
     if (!data || !data.length) {
         err = templates.error.replace("{{message}}", this.errMessage);
-        toRender = templates.list.replace("{{choices}}", err);
-        return this._renderError(toRender);
+        this.container.innerHTML = err;
     }
-
-    items = data.map(this._renderLI, this).join("");
-    toRender = templates.list.replace("{{choices}}", items);
-    return this._renderSucess(toRender);
-};
-
-/**
- * Renders list item data to the list item template
- * @method
- * @param {array} data
- */
-View.prototype._renderSucess = function(html) {
-    this.container.innerHTML = html;
+    else {
+        items = data.map(this._renderLI, this).join("");
+        this.container.innerHTML = templates.list.replace("{{choices}}", items);
+    }
     return this;
 };
-
-/**
- * Renders the error template
- * @method
- * @param {string} error - Message to paste into the popover (most likely html, but text works too!)
- */
-View.prototype._renderError = function(error) {
-    this.container.innerHTML = error;
-    return this;
-};
-
 
 /**
  * Renders listItem template with a datum as the context
@@ -848,6 +799,22 @@ View.prototype.hide = function hide(quill, range) {
     this.container.style.marginTop = "0";
     if (range) quill.setSelection(range);
     return this;
+};
+
+/**
+ * @method
+ * @returns {HTMLElement[]}
+ */
+View.prototype.getMatches = function getMatches() {
+    return this.container.querySelectorAll("li");
+};
+
+/**
+ * @method
+ * @returns {HTMLElement[]}
+ */
+View.prototype.hasMatches = function hasMatches() {
+    return this.getMatches().length > 0;
 };
 
 /**

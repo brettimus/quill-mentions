@@ -68,11 +68,16 @@ The docs are not as exhaustive as they should be, but they live (nonetheless) in
 * **Horizontally align the popover**
 * Refactor styles to not rely on dom elements
 
+# V-0 goals 
+* More flexible templates, allow custom `value` accessor functions
+* Allow config to turn of quill custom format
+* Customizable hotkeys
+
 # TODO
-* Find alternative to current use of `transform: translateZ` on the popover list items...
-* Write more robust regex for parsing names (separate for work)
-* ~~Hide view after insert~~
 * Determine horizontal rendering of mentions container.
+* Find alternative to current use of `transform: translateZ` on the popover list items...
+* ~~Write more robust regex for parsing names (separate for work)~~
+* ~~Hide view after insert~~
 * ~~Add keyboard events for up and down arrows~~
 * ~~Don't allow 'womp womp' message to be clicked~~
 * ~~Render ql-mentions container in a more logical position~~
