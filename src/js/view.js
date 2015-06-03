@@ -117,7 +117,8 @@ View.prototype.isHidden = function isHidden() {
  */
 View.prototype.show = function show(quill) {
 
-    this.container.style.marginTop = this._getNegativeMargin(quill);
+    this.container.style.marginTop = this._getTopMargin(quill);
+    this.container.style.marginLeft = this._getLeftMargin(quill);
     DOM.addClass(this.container, "ql-is-mentioning"); // TODO - config active class
     this.container.focus(); // Does this even do anything? It would if we were using form elements instead of LIs prob
 
@@ -132,7 +133,7 @@ View.prototype.show = function show(quill) {
  * @return {Node[]}
  */
 View.prototype._findOffsetLines = function(quill) {
-    var node = this._findMentionNode(quill);
+    var node = this._findMentionContainerNode(quill);
     return DOM.getOlderSiblingsInclusive(node);
 };
 
@@ -143,7 +144,7 @@ View.prototype._findOffsetLines = function(quill) {
  * @param {Range} range
  * @return {Node|null}
  */
-View.prototype._findMentionNode = function _findMentionNode(quill) {
+View.prototype._findMentionContainerNode = function _findMentionContainerNode(quill) {
     var range = quill.getSelection(),
         leafAndOffset,
         leaf,
@@ -164,10 +165,56 @@ View.prototype._findMentionNode = function _findMentionNode(quill) {
 };
 
 /**
+ * Return the (hopefully inline-positioned) DOM node that encloses the mention itself.
+ * @method
+ * @private
+ * @param {Range} range
+ * @return {Node|null}
+ */
+View.prototype._findMentionNode = function _findMentionNode(quill) {
+    var range = quill.getSelection(),
+        leafAndOffset,
+        leaf,
+        offset,
+        node;
+       
+                
+    leafAndOffset = quill.editor.doc.findLeafAt(range.start, true);
+    leaf = leafAndOffset[0];
+    offset = leafAndOffset[1]; // how many chars in front of current range
+    if (leaf) node = leaf.node;
+    while (node) {
+        if (node.tagName === "SPAN") break;
+        node = node.parentNode;
+    }
+    if (!node) return null;
+    return node;
+};
+
+View.prototype._getLeftMargin = function(quill) {
+    var mentionNode = this._findMentionNode(quill),
+        mentionParent = this._findMentionContainerNode(quill);
+
+    var mentionRect = mentionNode.getBoundingClientRect(),
+        parentRect = mentionParent.getBoundingClientRect(),
+        editorRect = quill.container.getBoundingClientRect();
+
+    var marginLeft = mentionRect.left - parentRect.left;
+
+    var overflow = marginLeft + mentionRect.width - editorRect.width;
+
+    if (overflow > 0) {
+        marginLeft -= (overflow);
+    }
+
+    return marginLeft + "px";
+};
+
+/**
  * @method
  * @private
  */
-View.prototype._getNegativeMargin = function(quill) {
+View.prototype._getTopMargin = function(quill) {
     var qlEditor = quill.editor.root,
         qlLines,
         marginTop = this.marginTop,

@@ -216,7 +216,7 @@
         <dl>
             
 <dt>
-    <h4 class="name" id="_findMentionNode"><span class="type-signature">&lt;private> </span>_findMentionNode<span class="signature">(range)</span><span class="type-signature"> &rarr; {Node|null}</span></h4>
+    <h4 class="name" id="_findMentionContainerNode"><span class="type-signature">&lt;private> </span>_findMentionContainerNode<span class="signature">(range)</span><span class="type-signature"> &rarr; {Node|null}</span></h4>
     
     
 </dt>
@@ -305,7 +305,145 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="view.js.html">view.js</a>, <a href="view.js.html#line151">line 151</a>
+        <a href="view.js.html">view.js</a>, <a href="view.js.html#line147">line 147</a>
+    </li></ul></dd>
+    
+    
+    
+    
+    
+    
+    
+</dl>
+
+    
+    
+
+    
+
+    
+    
+    
+    
+    
+    <h5>Returns:</h5>
+    
+            
+
+
+<dl>
+	<dt>
+		Type
+	</dt>
+	<dd>
+		
+<span class="param-type">Node</span>
+|
+
+<span class="param-type">null</span>
+
+
+	</dd>
+</dl>
+
+        
+    
+    
+</dd>
+
+        
+            
+<dt>
+    <h4 class="name" id="_findMentionNode"><span class="type-signature">&lt;private> </span>_findMentionNode<span class="signature">(range)</span><span class="type-signature"> &rarr; {Node|null}</span></h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <div class="description">
+        Return the (hopefully inline-positioned) DOM node that encloses the mention itself.
+    </div>
+    
+
+    
+    
+    
+    
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params">
+    <thead>
+	<tr>
+		
+		<th>Name</th>
+		
+		
+		<th>Type</th>
+		
+		
+		
+		
+		
+		<th class="last">Description</th>
+	</tr>
+	</thead>
+	
+	<tbody>
+	
+	
+        <tr>
+            
+                <td class="name"><code>range</code></td>
+            
+            
+            <td class="type">
+            
+                
+<span class="param-type">Range</span>
+
+
+            
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last"></td>
+        </tr>
+	
+	
+	</tbody>
+</table>
+    
+    
+    
+<dl class="details">
+    
+        
+    
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="view.js.html">view.js</a>, <a href="view.js.html#line174">line 174</a>
     </li></ul></dd>
     
     
@@ -443,7 +581,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="view.js.html">view.js</a>, <a href="view.js.html#line139">line 139</a>
+        <a href="view.js.html">view.js</a>, <a href="view.js.html#line135">line 135</a>
     </li></ul></dd>
     
     
@@ -489,7 +627,7 @@
         
             
 <dt>
-    <h4 class="name" id="_getNegativeMargin"><span class="type-signature">&lt;private> </span>_getNegativeMargin<span class="signature">()</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="_getTopMargin"><span class="type-signature">&lt;private> </span>_getTopMargin<span class="signature">()</span><span class="type-signature"></span></h4>
     
     
 </dt>
@@ -526,7 +664,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="view.js.html">view.js</a>, <a href="view.js.html#line175">line 175</a>
+        <a href="view.js.html">view.js</a>, <a href="view.js.html#line217">line 217</a>
     </li></ul></dd>
     
     
@@ -591,124 +729,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="view.js.html">view.js</a>, <a href="view.js.html#line196">line 196</a>
-    </li></ul></dd>
-    
-    
-    
-    
-    
-    
-    
-</dl>
-
-    
-    
-
-    
-
-    
-    
-    
-    
-    
-    
-    
-</dd>
-
-        
-            
-<dt>
-    <h4 class="name" id="_renderError"><span class="type-signature"></span>_renderError<span class="signature">(error)</span><span class="type-signature"></span></h4>
-    
-    
-</dt>
-<dd>
-    
-    
-    <div class="description">
-        Renders the error template
-    </div>
-    
-
-    
-    
-    
-    
-    
-        <h5>Parameters:</h5>
-        
-
-<table class="params">
-    <thead>
-	<tr>
-		
-		<th>Name</th>
-		
-		
-		<th>Type</th>
-		
-		
-		
-		
-		
-		<th class="last">Description</th>
-	</tr>
-	</thead>
-	
-	<tbody>
-	
-	
-        <tr>
-            
-                <td class="name"><code>error</code></td>
-            
-            
-            <td class="type">
-            
-                
-<span class="param-type">string</span>
-
-
-            
-            </td>
-            
-            
-            
-            
-            
-            <td class="description last">Message to paste into the popover (most likely html, but text works too!)</td>
-        </tr>
-	
-	
-	</tbody>
-</table>
-    
-    
-    
-<dl class="details">
-    
-        
-    
-    
-    
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="view.js.html">view.js</a>, <a href="view.js.html#line58">line 58</a>
+        <a href="view.js.html">view.js</a>, <a href="view.js.html#line238">line 238</a>
     </li></ul></dd>
     
     
@@ -825,124 +846,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="view.js.html">view.js</a>, <a href="view.js.html#line70">line 70</a>
-    </li></ul></dd>
-    
-    
-    
-    
-    
-    
-    
-</dl>
-
-    
-    
-
-    
-
-    
-    
-    
-    
-    
-    
-    
-</dd>
-
-        
-            
-<dt>
-    <h4 class="name" id="_renderSucess"><span class="type-signature"></span>_renderSucess<span class="signature">(data)</span><span class="type-signature"></span></h4>
-    
-    
-</dt>
-<dd>
-    
-    
-    <div class="description">
-        Renders list item data to the list item template
-    </div>
-    
-
-    
-    
-    
-    
-    
-        <h5>Parameters:</h5>
-        
-
-<table class="params">
-    <thead>
-	<tr>
-		
-		<th>Name</th>
-		
-		
-		<th>Type</th>
-		
-		
-		
-		
-		
-		<th class="last">Description</th>
-	</tr>
-	</thead>
-	
-	<tbody>
-	
-	
-        <tr>
-            
-                <td class="name"><code>data</code></td>
-            
-            
-            <td class="type">
-            
-                
-<span class="param-type">array</span>
-
-
-            
-            </td>
-            
-            
-            
-            
-            
-            <td class="description last"></td>
-        </tr>
-	
-	
-	</tbody>
-</table>
-    
-    
-    
-<dl class="details">
-    
-        
-    
-    
-    
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="view.js.html">view.js</a>, <a href="view.js.html#line48">line 48</a>
+        <a href="view.js.html">view.js</a>, <a href="view.js.html#line49">line 49</a>
     </li></ul></dd>
     
     
@@ -1082,7 +986,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="view.js.html">view.js</a>, <a href="view.js.html#line82">line 82</a>
+        <a href="view.js.html">view.js</a>, <a href="view.js.html#line61">line 61</a>
     </li></ul></dd>
     
     
@@ -1103,6 +1007,172 @@
     
     
     
+    
+    
+</dd>
+
+        
+            
+<dt>
+    <h4 class="name" id="getMatches"><span class="type-signature"></span>getMatches<span class="signature">()</span><span class="type-signature"> &rarr; {HTMLElement[]}</span></h4>
+    
+    
+</dt>
+<dd>
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+<dl class="details">
+    
+        
+    
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="view.js.html">view.js</a>, <a href="view.js.html#line91">line 91</a>
+    </li></ul></dd>
+    
+    
+    
+    
+    
+    
+    
+</dl>
+
+    
+    
+
+    
+
+    
+    
+    
+    
+    
+    <h5>Returns:</h5>
+    
+            
+
+
+<dl>
+	<dt>
+		Type
+	</dt>
+	<dd>
+		
+<span class="param-type">HTMLElement[]</span>
+
+
+	</dd>
+</dl>
+
+        
+    
+    
+</dd>
+
+        
+            
+<dt>
+    <h4 class="name" id="hasMatches"><span class="type-signature"></span>hasMatches<span class="signature">()</span><span class="type-signature"> &rarr; {HTMLElement[]}</span></h4>
+    
+    
+</dt>
+<dd>
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+<dl class="details">
+    
+        
+    
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="view.js.html">view.js</a>, <a href="view.js.html#line99">line 99</a>
+    </li></ul></dd>
+    
+    
+    
+    
+    
+    
+    
+</dl>
+
+    
+    
+
+    
+
+    
+    
+    
+    
+    
+    <h5>Returns:</h5>
+    
+            
+
+
+<dl>
+	<dt>
+		Type
+	</dt>
+	<dd>
+		
+<span class="param-type">HTMLElement[]</span>
+
+
+	</dd>
+</dl>
+
+        
     
     
 </dd>
@@ -1222,7 +1292,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="view.js.html">view.js</a>, <a href="view.js.html#line101">line 101</a>
+        <a href="view.js.html">view.js</a>, <a href="view.js.html#line80">line 80</a>
     </li></ul></dd>
     
     
@@ -1291,7 +1361,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="view.js.html">view.js</a>, <a href="view.js.html#line113">line 113</a>
+        <a href="view.js.html">view.js</a>, <a href="view.js.html#line108">line 108</a>
     </li></ul></dd>
     
     
@@ -1544,7 +1614,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="view.js.html">view.js</a>, <a href="view.js.html#line123">line 123</a>
+        <a href="view.js.html">view.js</a>, <a href="view.js.html#line118">line 118</a>
     </li></ul></dd>
     
     
@@ -1585,13 +1655,13 @@
 </div>
 
 <nav>
-    <h2><a href="index.html">Index</a></h2><h3>Modules</h3><ul><li><a href="module-controller.html">controller</a></li><li><a href="defaults.html">defaults/defaults</a></li><li><a href="module-mentions.html">mentions</a></li><li><a href="ajax.html">utilities/ajax</a></li><li><a href="extend.html">utilities/extend</a></li><li><a href="identity.html">utilities/identity</a></li></ul><h3>Classes</h3><ul><li><a href="module-controller-AJAXController.html">AJAXController</a></li><li><a href="module-controller-Controller.html">Controller</a></li><li><a href="module-mentions-QuillMentions.html">QuillMentions</a></li><li><a href="View.html">View</a></li></ul><h3>Namespaces</h3><ul><li><a href="KEYS.html">KEYS</a></li><li><a href="defaults-ajaxDefaults.html">ajaxDefaults</a></li><li><a href="defaults-defaults.html">defaults</a></li></ul><h3>Global</h3><ul><li><a href="global.html#_moveSelection">_moveSelection</a></li><li><a href="global.html#defaultFactory">defaultFactory</a></li><li><a href="global.html#extend">extend</a></li><li><a href="global.html#extendHelper">extendHelper</a></li><li><a href="global.html#handleDownKey">handleDownKey</a></li><li><a href="global.html#handleEnter">handleEnter</a></li><li><a href="global.html#handleEscape">handleEscape</a></li><li><a href="global.html#handleUpKey">handleUpKey</a></li><li><a href="global.html#identity">identity</a></li><li><a href="global.html#loadJSON">loadJSON</a></li><li><a href="global.html#replaceAll">replaceAll</a></li></ul>
+    <h2><a href="index.html">Index</a></h2><h3>Modules</h3><ul><li><a href="module-controller.html">controller</a></li><li><a href="defaults.html">defaults/defaults</a></li><li><a href="module-mentions.html">mentions</a></li><li><a href="ajax.html">utilities/ajax</a></li><li><a href="extend.html">utilities/extend</a></li><li><a href="identity.html">utilities/identity</a></li></ul><h3>Classes</h3><ul><li><a href="module-controller-AJAXController.html">AJAXController</a></li><li><a href="module-controller-Controller.html">Controller</a></li><li><a href="module-mentions-QuillMentions.html">QuillMentions</a></li><li><a href="View.html">View</a></li></ul><h3>Namespaces</h3><ul><li><a href="keydown.html">keydown</a></li><li><a href="defaults-ajaxDefaults.html">ajaxDefaults</a></li><li><a href="defaults-defaults.html">defaults</a></li></ul><h3>Global</h3><ul><li><a href="global.html#_moveSelection">_moveSelection</a></li><li><a href="global.html#defaultFactory">defaultFactory</a></li><li><a href="global.html#extend">extend</a></li><li><a href="global.html#extendHelper">extendHelper</a></li><li><a href="global.html#identity">identity</a></li><li><a href="global.html#keydownDownKey">keydownDownKey</a></li><li><a href="global.html#keydownEscape">keydownEscape</a></li><li><a href="global.html#keydownUpKey">keydownUpKey</a></li><li><a href="global.html#keyupEnter">keyupEnter</a></li><li><a href="global.html#loadJSON">loadJSON</a></li><li><a href="global.html#replaceAll">replaceAll</a></li></ul>
 </nav>
 
 <br clear="both">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.2.2</a> on Thu May 28 2015 21:03:55 GMT-0700 (PDT)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.2.2</a> on Tue Jun 02 2015 19:50:31 GMT-0700 (PDT)
 </footer>
 
 <script> prettyPrint(); </script>

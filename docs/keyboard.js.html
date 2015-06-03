@@ -45,20 +45,22 @@ var SELECTED_CLASS = "ql-mention-choice-selected";
   * @prop {Number} 38 - Handler for the up arrow key.
   * @prop {Number} 40 - Handler for the down arrow key.
   */
-var KEYS = {
-    13: handleEnter,
-    27: handleEscape,
-    38: handleUpKey,
-    40: handleDownKey,
+var keydown = {
+    27: keydownEscape,
+    38: keydownUpKey,
+    40: keydownDownKey,
+};
+
+var keyup = {
+    13: keyupEnter,
 };
 
 /**
  * @method
  * @this {QuillMentions}
  */
-function handleDownKey() {
+function keydownDownKey() {
     if (this.view.isHidden()) return;
-    this.quill.setSelection(this._cachedRange); // another HACK oh noz! todo bad icky
     _moveSelection.call(this, 1);
 }
 
@@ -66,31 +68,25 @@ function handleDownKey() {
  * @method
  * @this {QuillMentions}
  */
-function handleUpKey() {
+function keydownUpKey() {
     if (this.view.isHidden()) return;
-    this.quill.setSelection(this._cachedRange); // another HACK oh noz! todo bad icky
     _moveSelection.call(this, -1);
 }
-
-
 
 /**
  * @method
  * @this {QuillMentions}
  */
-function handleEnter() {
-    if (!this.isMentioning) {
-        this.selectedChoiceIndex = -1;
-        console.log("grrrr");
-    }
+function keyupEnter() {
     var nodes,
         currIndex = this.selectedChoiceIndex,
         currNode;
 
-    console.log("handling enter");
     if (currIndex === -1) return;
-    nodes = this.view.container.querySelectorAll("li");
-    if (nodes.length === 0) return;
+    if (!this.view.hasMatches()) return;
+
+    this.quill.setSelection(this._cachedRange);
+    nodes = this.view.getMatches();
     currNode = nodes[currIndex];
     this.addMention(currNode);
     this.selectedChoiceIndex = -1;
@@ -100,9 +96,8 @@ function handleEnter() {
  * @method
  * @this {QuillMentions}
  */
-function handleEscape() {
+function keydownEscape() {
     this.view.hide();
-    this.isMentioning = false;
     this.selectedChoiceIndex = -1;
     this.quill.focus();
 }
@@ -145,14 +140,14 @@ function _moveSelection(steps) {
 }
 
 function _normalizeIndex(i, modulo) {
-    if (modulo &lt;= 0) throw new Error("WTF are you doing? _normalizeIndex needs a nonnegative, nonzero modulo.");
+    if (modulo &lt;= 0) throw new Error("TF are you doing? _normalizeIndex needs a nonnegative, nonzero modulo.");
     while (i &lt; 0) {
         i += modulo;
     }
     return i % modulo;
 }
 
-module.exports = KEYS;</code></pre>
+module.exports = {keyup: keyup, keydown: keydown};</code></pre>
         </article>
     </section>
 
@@ -162,13 +157,13 @@ module.exports = KEYS;</code></pre>
 </div>
 
 <nav>
-    <h2><a href="index.html">Index</a></h2><h3>Modules</h3><ul><li><a href="module-controller.html">controller</a></li><li><a href="defaults.html">defaults/defaults</a></li><li><a href="module-mentions.html">mentions</a></li><li><a href="ajax.html">utilities/ajax</a></li><li><a href="extend.html">utilities/extend</a></li><li><a href="identity.html">utilities/identity</a></li></ul><h3>Classes</h3><ul><li><a href="module-controller-AJAXController.html">AJAXController</a></li><li><a href="module-controller-Controller.html">Controller</a></li><li><a href="module-mentions-QuillMentions.html">QuillMentions</a></li><li><a href="View.html">View</a></li></ul><h3>Namespaces</h3><ul><li><a href="KEYS.html">KEYS</a></li><li><a href="defaults-ajaxDefaults.html">ajaxDefaults</a></li><li><a href="defaults-defaults.html">defaults</a></li></ul><h3>Global</h3><ul><li><a href="global.html#_moveSelection">_moveSelection</a></li><li><a href="global.html#defaultFactory">defaultFactory</a></li><li><a href="global.html#extend">extend</a></li><li><a href="global.html#extendHelper">extendHelper</a></li><li><a href="global.html#handleDownKey">handleDownKey</a></li><li><a href="global.html#handleEnter">handleEnter</a></li><li><a href="global.html#handleEscape">handleEscape</a></li><li><a href="global.html#handleUpKey">handleUpKey</a></li><li><a href="global.html#identity">identity</a></li><li><a href="global.html#loadJSON">loadJSON</a></li><li><a href="global.html#replaceAll">replaceAll</a></li></ul>
+    <h2><a href="index.html">Index</a></h2><h3>Modules</h3><ul><li><a href="module-controller.html">controller</a></li><li><a href="defaults.html">defaults/defaults</a></li><li><a href="module-mentions.html">mentions</a></li><li><a href="ajax.html">utilities/ajax</a></li><li><a href="extend.html">utilities/extend</a></li><li><a href="identity.html">utilities/identity</a></li></ul><h3>Classes</h3><ul><li><a href="module-controller-AJAXController.html">AJAXController</a></li><li><a href="module-controller-Controller.html">Controller</a></li><li><a href="module-mentions-QuillMentions.html">QuillMentions</a></li><li><a href="View.html">View</a></li></ul><h3>Namespaces</h3><ul><li><a href="keydown.html">keydown</a></li><li><a href="defaults-ajaxDefaults.html">ajaxDefaults</a></li><li><a href="defaults-defaults.html">defaults</a></li></ul><h3>Global</h3><ul><li><a href="global.html#_moveSelection">_moveSelection</a></li><li><a href="global.html#defaultFactory">defaultFactory</a></li><li><a href="global.html#extend">extend</a></li><li><a href="global.html#extendHelper">extendHelper</a></li><li><a href="global.html#identity">identity</a></li><li><a href="global.html#keydownDownKey">keydownDownKey</a></li><li><a href="global.html#keydownEscape">keydownEscape</a></li><li><a href="global.html#keydownUpKey">keydownUpKey</a></li><li><a href="global.html#keyupEnter">keyupEnter</a></li><li><a href="global.html#loadJSON">loadJSON</a></li><li><a href="global.html#replaceAll">replaceAll</a></li></ul>
 </nav>
 
 <br clear="both">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.2.2</a> on Thu May 28 2015 21:03:55 GMT-0700 (PDT)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.2.2</a> on Tue Jun 02 2015 19:50:31 GMT-0700 (PDT)
 </footer>
 
 <script> prettyPrint(); </script>

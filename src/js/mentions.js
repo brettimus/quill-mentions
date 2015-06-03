@@ -109,9 +109,12 @@ QuillMentions.prototype.listenTextChange = function listenTextChange(quill) {
 
         if (mention) {
             _this = this;
+
             this.charSinceMention = 0;
             this._cachedRange = quill.getSelection();
             this.currentMention = mention;
+            this._addTemporaryMentionSpan();
+
             query = mention[0].replace(this.triggerSymbol, "");
 
             this.controller.search(query, function() {
@@ -217,19 +220,27 @@ QuillMentions.prototype.findMention = function findMention() {
  * @method
  * @param {HTMLElement}
  */
- QuillMentions.prototype.addMention = function addMention(node) {
-     var insertAt = this.currentMention.index,
-         toInsert = (this.includeTrigger ? this.triggerSymbol : "") + node.dataset.display,
-         toFocus = insertAt + toInsert.length + 1;
+QuillMentions.prototype.addMention = function addMention(node) {
+    var insertAt = this.currentMention.index,
+        toInsert = (this.includeTrigger ? this.triggerSymbol : "") + node.dataset.display,
+        toFocus = insertAt + toInsert.length + 1;
 
 
-     this.quill.deleteText(insertAt, insertAt + this.currentMention[0].length);
-     this.quill.insertText(insertAt, toInsert, "mention", this.mentionClass+"-"+node.dataset.mention);
-     this.quill.insertText(insertAt + toInsert.length, " ");
-     this.quill.setSelection(toFocus, toFocus);
+    this.quill.deleteText(insertAt, insertAt + this.currentMention[0].length);
+    this.quill.insertText(insertAt, toInsert, "mention", this.mentionClass+"-"+node.dataset.mention);
+    this.quill.insertText(insertAt + toInsert.length, " ");
+    this.quill.setSelection(toFocus, toFocus);
 
-     this.view.hide();
- };
+    this.view.hide();
+};
+
+QuillMentions.prototype._addTemporaryMentionSpan = function(range) {
+    var insertAt = this.currentMention.index,
+        toInsert = this.currentMention[0];
+
+    this.quill.deleteText(insertAt, insertAt + this.currentMention[0].length);
+    this.quill.insertText(insertAt, toInsert, "mention", "is-typing-mention");
+};
 
 
  /**
