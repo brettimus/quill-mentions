@@ -539,8 +539,9 @@ QuillMentions.prototype.listenClick = function(elt) {
  * @return {Match}
  */
 QuillMentions.prototype.findMention = function findMention() {
-    var range = this.quill.getSelection() || this._cachedRange,
-        cursor = range.end,
+    var range = this.quill.getSelection() || this._cachedRange;
+    if (!range) return;
+    var cursor = range.end,
         contents = this.quill.getText(0, cursor);
 
     return this.matcher.exec(contents);
