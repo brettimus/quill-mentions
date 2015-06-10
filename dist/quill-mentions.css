@@ -41,6 +41,8 @@
   transform: translateZ(1px);
 }
 .ql-mention-no-match i {
-  border-left: solid 2px #df928e;
+  border-left: solid 2px #DF928E;
   padding-left: 6px;
 }
+
+/*# sourceMappingURL=quill-mentions.css.map */

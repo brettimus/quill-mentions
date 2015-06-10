@@ -109,9 +109,12 @@ QuillMentions.prototype.listenTextChange = function listenTextChange(quill) {
 
         if (mention) {
             _this = this;
+
             this.charSinceMention = 0;
             this._cachedRange = quill.getSelection();
             this.currentMention = mention;
+            this._addTemporaryMentionSpan();
+
             query = mention[0].replace(this.triggerSymbol, "");
 
             this.controller.search(query, function() {
@@ -205,8 +208,9 @@ QuillMentions.prototype.listenClick = function(elt) {
  * @return {Match}
  */
 QuillMentions.prototype.findMention = function findMention() {
-    var range = this.quill.getSelection() || this._cachedRange,
-        cursor = range.end,
+    var range = this.quill.getSelection() || this._cachedRange;
+    if (!range) return;
+    var cursor = range.end,
         contents = this.quill.getText(0, cursor);
 
     return this.matcher.exec(contents);
@@ -217,23 +221,31 @@ QuillMentions.prototype.findMention = function findMention() {
  * @method
  * @param {HTMLElement}
  */
- QuillMentions.prototype.addMention = function addMention(node) {
-     var insertAt = this.currentMention.index,
-         toInsert = (this.includeTrigger ? this.triggerSymbol : "") + node.dataset.display,
-         toFocus = insertAt + toInsert.length + 1;
+QuillMentions.prototype.addMention = function addMention(node) {
+    var insertAt = this.currentMention.index,
+        toInsert = (this.includeTrigger ? this.triggerSymbol : "") + node.dataset.display,
+        toFocus = insertAt + toInsert.length + 1;
 
     if (this.currentMention[1] && this.currentMention[1].length) {
         insertAt += this.currentMention[1].length;
         toFocus += this.currentMention[1].length;
     }
 
-     this.quill.deleteText(insertAt, insertAt + this.currentMention[0].length);
-     this.quill.insertText(insertAt, toInsert, "mention", this.mentionClass+"-"+node.dataset.mention);
-     this.quill.insertText(insertAt + toInsert.length, " ");
-     this.quill.setSelection(toFocus, toFocus);
+    this.quill.deleteText(insertAt, insertAt + this.currentMention[0].length);
+    this.quill.insertText(insertAt, toInsert, "mention", this.mentionClass+"-"+node.dataset.mention);
+    this.quill.insertText(insertAt + toInsert.length, " ");
+    this.quill.setSelection(toFocus, toFocus);
 
-     this.view.hide();
- };
+    this.view.hide();
+};
+
+QuillMentions.prototype._addTemporaryMentionSpan = function(range) {
+    var insertAt = this.currentMention.index,
+        toInsert = this.currentMention[0];
+
+    this.quill.deleteText(insertAt, insertAt + this.currentMention[0].length);
+    this.quill.insertText(insertAt, toInsert, "mention", "is-typing-mention");
+};
 
 
  /**

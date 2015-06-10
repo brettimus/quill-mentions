@@ -58,35 +58,14 @@ View.prototype.render = function(data) {
         toRender;
     if (!data || !data.length) {
         err = templates.error.replace("{{message}}", this.errMessage);
-        toRender = templates.list.replace("{{choices}}", err);
-        return this._renderError(toRender);
+        this.container.innerHTML = err;
     }
-
-    items = data.map(this._renderLI, this).join("");
-    toRender = templates.list.replace("{{choices}}", items);
-    return this._renderSucess(toRender);
-};
-
-/**
- * Renders list item data to the list item template
- * @method
- * @param {array} data
- */
-View.prototype._renderSucess = function(html) {
-    this.container.innerHTML = html;
+    else {
+        items = data.map(this._renderLI, this).join("");
+        this.container.innerHTML = templates.list.replace("{{choices}}", items);
+    }
     return this;
 };
-
-/**
- * Renders the error template
- * @method
- * @param {string} error - Message to paste into the popover (most likely html, but text works too!)
- */
-View.prototype._renderError = function(error) {
-    this.container.innerHTML = error;
-    return this;
-};
-
 
 /**
  * Renders listItem template with a datum as the context
@@ -133,6 +112,22 @@ View.prototype.hide = function hide(quill, range) {
 };
 
 /**
+ * @method
+ * @returns {HTMLElement[]}
+ */
+View.prototype.getMatches = function getMatches() {
+    return this.container.querySelectorAll("li");
+};
+
+/**
+ * @method
+ * @returns {HTMLElement[]}
+ */
+View.prototype.hasMatches = function hasMatches() {
+    return this.getMatches().length > 0;
+};
+
+/**
  * Returns whether the popover is in view. I had bad feels about this method but it's coming in hand re: keyboard events right now.
  * @method
  * @returns {boolean}
@@ -149,7 +144,8 @@ View.prototype.isHidden = function isHidden() {
  */
 View.prototype.show = function show(quill) {
 
-    this.container.style.marginTop = this._getNegativeMargin(quill);
+    this.container.style.marginTop = this._getTopMargin(quill);
+    this.container.style.marginLeft = this._getLeftMargin(quill);
     DOM.addClass(this.container, "ql-is-mentioning"); // TODO - config active class
     this.container.focus(); // Does this even do anything? It would if we were using form elements instead of LIs prob
 
@@ -164,7 +160,7 @@ View.prototype.show = function show(quill) {
  * @return {Node[]}
  */
 View.prototype._findOffsetLines = function(quill) {
-    var node = this._findMentionNode(quill);
+    var node = this._findMentionContainerNode(quill);
     return DOM.getOlderSiblingsInclusive(node);
 };
 
@@ -175,7 +171,7 @@ View.prototype._findOffsetLines = function(quill) {
  * @param {Range} range
  * @return {Node|null}
  */
-View.prototype._findMentionNode = function _findMentionNode(quill) {
+View.prototype._findMentionContainerNode = function _findMentionContainerNode(quill) {
     var range = quill.getSelection(),
         leafAndOffset,
         leaf,
@@ -196,10 +192,56 @@ View.prototype._findMentionNode = function _findMentionNode(quill) {
 };
 
 /**
+ * Return the (hopefully inline-positioned) DOM node that encloses the mention itself.
+ * @method
+ * @private
+ * @param {Range} range
+ * @return {Node|null}
+ */
+View.prototype._findMentionNode = function _findMentionNode(quill) {
+    var range = quill.getSelection(),
+        leafAndOffset,
+        leaf,
+        offset,
+        node;
+       
+                
+    leafAndOffset = quill.editor.doc.findLeafAt(range.start, true);
+    leaf = leafAndOffset[0];
+    offset = leafAndOffset[1]; // how many chars in front of current range
+    if (leaf) node = leaf.node;
+    while (node) {
+        if (node.tagName === "SPAN") break;
+        node = node.parentNode;
+    }
+    if (!node) return null;
+    return node;
+};
+
+View.prototype._getLeftMargin = function(quill) {
+    var mentionNode = this._findMentionNode(quill),
+        mentionParent = this._findMentionContainerNode(quill);
+
+    var mentionRect = mentionNode.getBoundingClientRect(),
+        parentRect = mentionParent.getBoundingClientRect(),
+        editorRect = quill.container.getBoundingClientRect();
+
+    var marginLeft = mentionRect.left - parentRect.left;
+
+    var overflow = marginLeft + mentionRect.width - editorRect.width;
+
+    if (overflow > 0) {
+        marginLeft -= (overflow);
+    }
+
+    return marginLeft + "px";
+};
+
+/**
  * @method
  * @private
  */
-View.prototype._getNegativeMargin = function(quill) {
+View.prototype._getTopMargin = function(quill) {
     var qlEditor = quill.editor.root,
         qlLines,
         marginTop = this.marginTop,
@@ -238,13 +280,13 @@ function QuillEditorView() {
 </div>
 
 <nav>
-    <h2><a href="index.html">Index</a></h2><h3>Modules</h3><ul><li><a href="module-controller.html">controller</a></li><li><a href="defaults.html">defaults/defaults</a></li><li><a href="module-mentions.html">mentions</a></li><li><a href="ajax.html">utilities/ajax</a></li><li><a href="extend.html">utilities/extend</a></li><li><a href="identity.html">utilities/identity</a></li></ul><h3>Classes</h3><ul><li><a href="module-controller-AJAXController.html">AJAXController</a></li><li><a href="module-controller-Controller.html">Controller</a></li><li><a href="module-mentions-QuillMentions.html">QuillMentions</a></li><li><a href="View.html">View</a></li></ul><h3>Namespaces</h3><ul><li><a href="KEYS.html">KEYS</a></li><li><a href="defaults-ajaxDefaults.html">ajaxDefaults</a></li><li><a href="defaults-defaults.html">defaults</a></li></ul><h3>Global</h3><ul><li><a href="global.html#_moveSelection">_moveSelection</a></li><li><a href="global.html#defaultFactory">defaultFactory</a></li><li><a href="global.html#extend">extend</a></li><li><a href="global.html#extendHelper">extendHelper</a></li><li><a href="global.html#handleDownKey">handleDownKey</a></li><li><a href="global.html#handleEnter">handleEnter</a></li><li><a href="global.html#handleEscape">handleEscape</a></li><li><a href="global.html#handleUpKey">handleUpKey</a></li><li><a href="global.html#identity">identity</a></li><li><a href="global.html#loadJSON">loadJSON</a></li><li><a href="global.html#replaceAll">replaceAll</a></li></ul>
+    <h2><a href="index.html">Index</a></h2><h3>Modules</h3><ul><li><a href="module-controller.html">controller</a></li><li><a href="defaults.html">defaults/defaults</a></li><li><a href="module-mentions.html">mentions</a></li><li><a href="ajax.html">utilities/ajax</a></li><li><a href="extend.html">utilities/extend</a></li><li><a href="identity.html">utilities/identity</a></li></ul><h3>Classes</h3><ul><li><a href="module-controller-AJAXController.html">AJAXController</a></li><li><a href="module-controller-Controller.html">Controller</a></li><li><a href="module-mentions-QuillMentions.html">QuillMentions</a></li><li><a href="View.html">View</a></li></ul><h3>Namespaces</h3><ul><li><a href="keydown.html">keydown</a></li><li><a href="defaults-ajaxDefaults.html">ajaxDefaults</a></li><li><a href="defaults-defaults.html">defaults</a></li></ul><h3>Global</h3><ul><li><a href="global.html#_moveSelection">_moveSelection</a></li><li><a href="global.html#defaultFactory">defaultFactory</a></li><li><a href="global.html#extend">extend</a></li><li><a href="global.html#extendHelper">extendHelper</a></li><li><a href="global.html#identity">identity</a></li><li><a href="global.html#keydownDownKey">keydownDownKey</a></li><li><a href="global.html#keydownEscape">keydownEscape</a></li><li><a href="global.html#keydownUpKey">keydownUpKey</a></li><li><a href="global.html#keyupEnter">keyupEnter</a></li><li><a href="global.html#loadJSON">loadJSON</a></li><li><a href="global.html#replaceAll">replaceAll</a></li></ul>
 </nav>
 
 <br clear="both">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.2.2</a> on Thu May 28 2015 21:03:55 GMT-0700 (PDT)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.2.2</a> on Wed Jun 10 2015 16:03:37 GMT-0700 (PDT)
 </footer>
 
 <script> prettyPrint(); </script>
