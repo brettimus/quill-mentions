@@ -231,9 +231,19 @@ QuillMentions.prototype.addMention = function addMention(node) {
         toFocus += this.currentMention[1].length;
     }
 
-    this.quill.deleteText(insertAt, insertAt + this.currentMention[0].length);
-    this.quill.insertText(insertAt, toInsert, "mention", this.mentionClass+"-"+node.dataset.mention);
-    this.quill.insertText(insertAt + toInsert.length, " ");
+    if (this.quill.modules.placeholder &&
+        this.quill.modules.placeholder.isEmpty()) {
+
+        this.quill.setText(toInsert);
+        this.quill.formatText(1, toInsert.length, "mention", this.mentionClass+"-"+node.dataset.mention);
+        this.quill.insertText(1 + toInsert.length, " ");
+
+
+    } else {
+        this.quill.deleteText(insertAt, insertAt + this.currentMention[0].length);
+        this.quill.insertText(insertAt, toInsert, "mention", this.mentionClass+"-"+node.dataset.mention);
+        this.quill.insertText(insertAt + toInsert.length, " ");
+    }
     this.quill.setSelection(toFocus, toFocus);
 
     this.view.hide();
@@ -243,8 +253,14 @@ QuillMentions.prototype._addTemporaryMentionSpan = function(range) {
     var insertAt = this.currentMention.index,
         toInsert = this.currentMention[0];
 
-    this.quill.deleteText(insertAt, insertAt + this.currentMention[0].length);
-    this.quill.insertText(insertAt, toInsert, "mention", "is-typing-mention");
+    this.quill.deleteText(insertAt, insertAt + toInsert.length);
+    if (this.quill.modules.placeholder &&
+        this.quill.modules.placeholder.isEmpty()) {
+            this.quill.setText(toInsert);
+            this.quill.formatText(1, toInsert.length, "mention", "is-typing-mention");
+    } else {
+        this.quill.insertText(insertAt, toInsert, "mention", "is-typing-mention");
+    }
 };
 
 
